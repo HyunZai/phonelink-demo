@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { FaPhone, FaEnvelope, FaUser } from "react-icons/fa";
+import { FaPhone, FaEnvelope, FaUserAlt } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { api } from "../../api/axios";
 import { ThemeContext } from "../../context/ThemeContext";
@@ -191,7 +191,7 @@ const StoreStaffForm: React.FC<StoreStaffFormProps> = ({ storeId }) => {
       <div className="space-y-4">
         {staffMembers.length === 0 ? (
           <div className="text-center py-12">
-            <FaUser className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <FaUserAlt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-lg text-gray-500 dark:text-gray-400">등록된 직원이 없습니다.</p>
           </div>
         ) : (
@@ -225,7 +225,7 @@ const StoreStaffForm: React.FC<StoreStaffFormProps> = ({ storeId }) => {
                             />
                           ) : (
                             <div className="w-16 h-16 lg:w-12 lg:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
-                              <FaUser className="w-8 h-8 lg:w-6 lg:h-6 text-gray-400 dark:text-gray-500" />
+                              <FaUserAlt className="w-8 h-8 lg:w-6 h-6 text-gray-400 dark:text-gray-500" />
                             </div>
                           )}
                         </div>

@@ -31,12 +31,12 @@ import { useAuthStore } from "../store/authStore";
 import { toast } from "sonner";
 
 const PostWritePage: React.FC = () => {
-  const { category } = useParams<{ category?: string }>();
+  const { category, postId } = useParams<{ category?: string; postId?: string }>();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFontSizeOpen, setIsFontSizeOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuthStore();
 
   // Tiptap 에디터 설정
@@ -79,14 +79,36 @@ const PostWritePage: React.FC = () => {
     },
   });
 
-  // 편집 모드 확인
-  //   useEffect(() => {
-  //     if (포스트 아이디) {
-  //       setIsEditMode(true);
-  //       // TODO: 기존 게시글 데이터 로드
-  //       // loadExistingPost(postId);
-  //     }
-  //   }, [category]);
+  // 편집 모드 확인 및 기존 게시글 로드
+  useEffect(() => {
+    const loadExistingPost = async () => {
+      if (postId) {
+        try {
+          setIsLoading(true);
+          setIsEditMode(true);
+          const response = await api.get(`/post/detail/${postId}`);
+          if (response) {
+            // 작성자 체크
+            if (response.authorId !== user?.id) {
+              toast.error("본인의 게시글만 수정할 수 있습니다.");
+              navigate(`/${category}/${postId}`, { replace: true });
+              return;
+            }
+            setTitle(response.title);
+            editor?.commands.setContent(response.content);
+          }
+        } catch (error) {
+          console.error("게시글 로드 오류:", error);
+          toast.error("게시글을 불러오는 중 오류가 발생했습니다.");
+          navigate(`/${category || "post"}`, { replace: true });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadExistingPost();
+  }, [postId, editor, user, category, navigate]);
 
   // 페이지 벗어날 때 확인 메시지
   useEffect(() => {
@@ -152,18 +174,33 @@ const PostWritePage: React.FC = () => {
 
       const content = editor?.getHTML() || "";
 
-      const requestBody: PostCreateData = {
-        title,
-        content,
-        userId: user?.id,
-      };
-
-      const response = await api.post(`/post/write/${category}`, requestBody);
-      if (response) {
-        toast.success("게시글이 저장되었습니다.");
-        navigate(`/${category}/${response.id}`);
+      if (isEditMode && postId) {
+        // 수정 모드
+        const requestBody = {
+          title,
+          content,
+        };
+        const response = await api.post(`/post/update/${postId}`, requestBody);
+        if (response) {
+          toast.success("게시글이 수정되었습니다.");
+          navigate(`/${category}/${postId}`);
+        } else {
+          toast.error("게시글 수정 도중 오류가 발생했습니다.");
+        }
       } else {
-        toast.error("게시글 저장 도중 오류가 발생했습니다.");
+        // 작성 모드
+        const requestBody: PostCreateData = {
+          title,
+          content,
+          userId: user?.id,
+        };
+        const response = await api.post(`/post/write/${category}`, requestBody);
+        if (response) {
+          toast.success("게시글이 저장되었습니다.");
+          navigate(`/${category}/${response.id}`);
+        } else {
+          toast.error("게시글 저장 도중 오류가 발생했습니다.");
+        }
       }
     } else {
       toast.error("로그인 후 이용해주세요.");
@@ -174,9 +211,25 @@ const PostWritePage: React.FC = () => {
   // 취소 함수
   const handleCancel = () => {
     if (window.confirm("작성 중인 내용이 사라집니다. 정말 취소하시겠습니까?")) {
-      navigate("/tips");
+      if (isEditMode && postId) {
+        navigate(`/${category}/${postId}`);
+      } else {
+        navigate(`/${category || ""}`);
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 mt-16">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400">게시글을 불러오는 중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

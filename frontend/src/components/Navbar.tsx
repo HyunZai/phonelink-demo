@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ThemeToggleButton from "./ThemeToggleButton";
 import { IoMenuOutline, IoChevronDown } from "react-icons/io5";
-import { FiUser } from "react-icons/fi";
+import { FaUserAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { ROLES } from "../../../shared/constants";
@@ -156,8 +156,8 @@ const Navbar: React.FC = () => {
                     className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                    <FiUser className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-[#292929]">
+                    <FaUserAlt className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                   </div>
                 )}
               </div>

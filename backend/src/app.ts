@@ -23,8 +23,8 @@ dotenv.config();
 const app = express();
 
 // 정적 파일 제공을 위한 미들웨어 설정
-const uploadsPath = path.join(process.cwd(), "uploads")
-console.log(`uploadsPath: ${uploadsPath}`)
+const uploadsPath = path.join(process.cwd(), "uploads");
+console.log(`uploadsPath: ${uploadsPath}`);
 app.use("/uploads", express.static(uploadsPath));
 
 // JSON 파싱 미들웨어 설정
@@ -57,7 +57,6 @@ app.use(
   }),
 );
 
-
 app.use("/api/offer", offerRoutes);
 app.use("/api/price-input", priceInputRoutes);
 app.use("/api/user", userRoutes);
@@ -81,7 +80,7 @@ app.get("/api/debug-paths", (req, res) => {
   res.json({
     "process.cwd()": cwd,
     "express.static path": staticPath,
-    "__dirname": __dirname,
+    __dirname: __dirname,
     "calculated __dirname path": path.join(__dirname, "../uploads"),
   });
 });
