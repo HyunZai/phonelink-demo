@@ -5,7 +5,8 @@ import type { UserDto, UserUpdateData } from "../../../shared/types";
 import { useAuthStore } from "../store/authStore";
 import { useTheme } from "../hooks/useTheme";
 import Swal from "sweetalert2";
-import { FiUser, FiEdit3, FiMessageSquare, FiLink, FiStar, FiChevronRight } from "react-icons/fi";
+import { FaUserAlt } from "react-icons/fa";
+import { FiEdit3, FiMessageSquare, FiLink, FiStar, FiChevronRight } from "react-icons/fi";
 import ProfileEditModal from "../components/mypage/ProfileEditModal";
 import PostsModal from "../components/mypage/PostsModal";
 import CommentsModal from "../components/mypage/CommentsModal";
@@ -139,7 +140,7 @@ const MyPage: React.FC = () => {
 
           {/* 사용자 프로필 섹션 */}
           <div
-            className="bg-white dark:bg-[#292929] rounded-lg shadow-md p-6 mb-6 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            className="bg-white dark:bg-[#292929] rounded-lg shadow-md p-6 mb-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 group"
             onClick={() => setShowProfileEdit(true)}
           >
             <div className="flex items-center space-x-4">
@@ -153,7 +154,7 @@ const MyPage: React.FC = () => {
                   />
                 ) : (
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <FiUser className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                    <FaUserAlt className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 dark:text-gray-500" />
                   </div>
                 )}
               </div>
@@ -169,7 +170,7 @@ const MyPage: React.FC = () => {
 
               {/* 화살표 아이콘 */}
               <div className="flex-shrink-0">
-                <FiChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                <FiChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:translate-x-1 transition-all duration-200" />
               </div>
             </div>
           </div>

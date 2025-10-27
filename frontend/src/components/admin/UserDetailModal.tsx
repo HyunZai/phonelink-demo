@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { FiUser, FiMail, FiPhone, FiCalendar, FiClock, FiAlertCircle, FiHome, FiChevronDown } from "react-icons/fi";
+import { FaUserAlt } from "react-icons/fa";
+import { FiMail, FiPhone, FiCalendar, FiClock, FiAlertCircle, FiHome, FiChevronDown } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { Listbox, Transition } from "@headlessui/react";
 import type { UserDetailDto } from "../../../../shared/user.types";
@@ -337,7 +338,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="회원 상세 정보" icon={FiUser}>
+    <Modal isOpen={isOpen} onClose={onClose} title="회원 상세 정보" icon={FaUserAlt}>
       <div className="space-y-4">
         {/* 로딩 상태 */}
         {loading && (
@@ -427,7 +428,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ isOpen, onClose, user
                   />
                 ) : (
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-white dark:border-gray-700 shadow-md">
-                    <FiUser className="w-7 h-7 text-gray-500 dark:text-gray-400" />
+                    <FaUserAlt className="w-7 h-7 text-gray-400 dark:text-gray-500" />
                   </div>
                 )}
               </div>
