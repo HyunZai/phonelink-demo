@@ -1,9 +1,9 @@
 # Stage 1: Build the React application
-FROM node:18-alpine AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
 
 COPY . .
@@ -12,10 +12,12 @@ RUN npm run build
 # Stage 2: Serve the application with Nginx
 FROM nginx:1.21-alpine
 
-COPY --from=build /app/dist /usr/share/nginx/html
+LABEL org.opencontainers.image.source=https://github.com/phone-link-org/phone-link
+
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
 
 # Copy the nginx config file
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

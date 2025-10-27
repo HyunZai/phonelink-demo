@@ -35,7 +35,7 @@ app.use(requestLoggingMiddleware);
 
 app.use(
   cors({
-    //origin: "http://localhost:5173", // 프론트 주소(로컬 실행 시 얘로)
+    //origin: "http://localhost:5173", // 프론트 주소
     origin: "http://phonelink-frontend-service.phonelink:80", // 프론트 주소
     methods: ["GET", "POST"],
     credentials: true,

@@ -17,7 +17,8 @@ export interface ApiError {
 
 const baseURL = import.meta.env.VITE_API_URL;
 if (!baseURL) {
-  throw new Error("VITE_API_URL is not defined. Please check your .env file.");
+  //throw new Error("VITE_API_URL is not defined. Please check your .env file.");
+  console.log(`VITE_API_URL is ${baseURL}`);
 }
 
 // Axios 인스턴스 생성
