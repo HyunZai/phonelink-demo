@@ -59,6 +59,7 @@ jobs:
           context: .
           file: ./frontend/Dockerfile
           push: true
+          platforms: "linux/amd64, linux/arm64"
           tags: ghcr.io/phone-link-org/phone-link/frontend:latest
 
       - name: Build and push backend
@@ -67,4 +68,5 @@ jobs:
           context: .
           file: ./backend/Dockerfile
           push: true
+          platforms: "linux/amd64, linux/arm64"
           tags: ghcr.io/phone-link-org/phone-link/backend:latest
