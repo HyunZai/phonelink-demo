@@ -1,0 +1,69 @@
+name: Deploy Frontend and Backend
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      # Frontend CI
+      - name: Install frontend dependencies
+        run: cd frontend && npm install
+
+      - name: Lint frontend
+        run: cd frontend && npm run lint
+
+      - name: Format frontend
+        run: cd frontend && npm run format
+
+      # Backend CI
+      - name: Install backend dependencies
+        run: cd backend && npm install
+
+      - name: Lint backend
+        run: cd backend && npm run lint
+
+      - name: Format backend
+        run: cd backend && npm run format
+
+      # Docker build and push
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          platforms: "linux/amd64, linux/arm64"
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/phone-link-frontend:latest
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          platforms: "linux/amd64, linux/arm64"
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/phone-link-backend:latest
