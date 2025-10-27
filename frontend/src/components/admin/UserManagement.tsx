@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { FiUser, FiSearch, FiUsers } from "react-icons/fi";
+import { FaUserAlt } from "react-icons/fa";
+import { FiSearch, FiUsers } from "react-icons/fi";
 import type { UserSimpleDto } from "../../../../shared/user.types";
 import { ROLES, type UserStatus } from "../../../../shared/constants";
 import Pagination from "../Pagination";
@@ -177,7 +178,7 @@ const UserManagement: React.FC = () => {
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600 group-hover:border-primary-light dark:group-hover:border-primary-dark group-hover:scale-110 transition-all duration-200">
-                      <FiUser className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-primary-light dark:group-hover:text-primary-dark transition-colors duration-200" />
+                      <FaUserAlt className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary-light dark:group-hover:text-primary-dark transition-colors duration-200" />
                     </div>
                   )}
                 </div>

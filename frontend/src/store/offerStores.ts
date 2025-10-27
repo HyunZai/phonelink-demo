@@ -12,7 +12,6 @@ import type {
 } from "../../../shared/types";
 import { SORT_ORDER, type OfferType, type SortOrder } from "../../../shared/constants";
 
-// 1. Store의 상태(state)와 액션(actions)에 대한 타입을 정의합니다.
 interface OfferState {
   selectedRegions: OfferRegionDto[];
   selectedModels: OfferModelDto[];
@@ -37,7 +36,6 @@ interface OfferActions {
   fetchOffers: (isNewSearch: boolean) => Promise<void>;
 }
 
-// 2. 초기 상태를 정의합니다.
 const initialState: OfferState = {
   selectedRegions: [],
   selectedModels: [],
@@ -50,20 +48,17 @@ const initialState: OfferState = {
   loading: false,
 };
 
-// 3. create 함수로 store를 생성합니다.
 export const useOfferStore = create<OfferState & OfferActions>((set, get) => ({
-  ...initialState, // 초기 상태 적용
+  ...initialState,
 
-  // --- Actions 구현 ---
   setSelectedRegions: (regions) => set({ selectedRegions: regions }),
   setSelectedModels: (models) => set({ selectedModels: models }),
   setSelectedCarriers: (carriers) => set({ selectedCarriers: carriers }),
   setSelectedOfferTypes: (types) => set({ selectedOfferTypes: types }),
   setSortOrder: (order) => set({ sortOrder: order }),
 
-  // 여러 상태를 한번에 바꾸는 액션을 만들면 매우 편리합니다.
   resetFilters: () => {
-    set(initialState); // 모든 상태를 초기 상태로 되돌림
+    set(initialState);
   },
 
   fetchOffers: async (isNewSearch = false) => {
@@ -81,9 +76,9 @@ export const useOfferStore = create<OfferState & OfferActions>((set, get) => ({
         models: selectedModels,
         carriers: selectedCarriers,
         offerTypes: selectedOfferTypes,
-        page: currentPage, // ref에서 현재 페이지 번호 가져오기
+        page: currentPage,
         limit: 20,
-        sortOrder: sortOrder, // 정렬 순서 추가
+        sortOrder: sortOrder,
       };
 
       const response = await apiClient.post<{
