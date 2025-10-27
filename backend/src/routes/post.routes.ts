@@ -650,6 +650,63 @@ router.get("/detail/:id", optionalAuth, async (req: AuthenticatedRequest, res) =
   }
 });
 
+router.post("/delete/:id", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    const postId = parseInt(id);
+
+    if (isNaN(postId) || postId <= 0) {
+      return res.status(400).json({ success: false, message: "유효하지 않은 게시글 ID입니다." });
+    }
+
+    const post = await AppDataSource.manager.findOne(Post, { where: { id: postId } });
+    if (!post) {
+      return res.status(404).json({ success: false, message: "게시글을 찾을 수 없습니다." });
+    }
+    if (post.userId !== userId) {
+      return res.status(403).json({ success: false, message: "권한이 없습니다." });
+    }
+    post.isDeleted = true;
+    await AppDataSource.manager.save(post);
+    return res.status(200).json({ success: true, message: "게시글이 삭제되었습니다." });
+  } catch (error) {
+    console.error("게시글 삭제 오류:", error);
+    res.status(500).json({
+      success: false,
+      message: "게시글 삭제에 실패했습니다.",
+      error: error instanceof Error ? error.message : "알 수 없는 오류",
+    });
+  }
+});
+
+router.post("/update/:id", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    const postId = parseInt(id);
+    if (isNaN(postId) || postId <= 0) {
+      return res.status(400).json({ success: false, message: "유효하지 않은 게시글 ID입니다." });
+    }
+    const post = await AppDataSource.manager.findOne(Post, { where: { id: postId } });
+    if (!post) return res.status(404).json({ success: false, message: "게시글을 찾을 수 없습니다." });
+    if (post.userId !== userId) return res.status(403).json({ success: false, message: "권한이 없습니다." });
+    post.title = req.body.title;
+    post.content = req.body.content;
+    const savedPost = await AppDataSource.manager.save(post);
+    return res.status(200).json({
+      success: true,
+      data: savedPost,
+    });
+  } catch (error) {
+    console.error("게시글 수정 오류:", error);
+    res.status(500).json({
+      success: false,
+      message: "게시글 수정에 실패했습니다.",
+      error: error instanceof Error ? error.message : "알 수 없는 오류",
+    });
+  }
+});
 // 인기 게시글 조회 (3일 전부터 현재까지 좋아요 수가 많은 게시글 5개)
 router.get("/popular/:category", async (req, res) => {
   const { category } = req.params;

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaHeart, FaReply } from "react-icons/fa";
+import { FaHeart, FaReply, FaUserAlt } from "react-icons/fa";
 import { toast } from "sonner";
 import type { CommentCreateData, CommentListDto } from "../../../shared/types";
 import { useAuthStore } from "../store/authStore";
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 interface PostCommentProps {
   post: {
     id: number;
+    authorId: number;
     comments: CommentListDto[];
   };
   setPost: React.Dispatch<React.SetStateAction<any>>;
@@ -118,23 +119,35 @@ const PostComment: React.FC<PostCommentProps> = ({ post, setPost }) => {
     return (
       <div
         key={comment.id}
-        className={`flex space-x-3 ${depth > 0 ? "pl-4 border-l-2 border-gray-200 dark:border-gray-700" : ""}`}
+        className={`flex space-x-3 ${depth > 0 ? "pl-4 border-l-2 border-background-light dark:border-background-dark" : ""}`}
       >
         <div className="flex-shrink-0">
-          <img
-            src={
-              comment.author.profileImageUrl
-                ? `${import.meta.env.VITE_API_URL}${comment.author.profileImageUrl}`
-                : undefined
-            }
-            alt={comment.author.nickname}
-            className="w-8 h-8 rounded-full bg-gray-300"
-          />
+          {comment.author.profileImageUrl ? (
+            <img
+              src={`${import.meta.env.VITE_API_URL}${comment.author.profileImageUrl}`}
+              alt={comment.author.nickname}
+              className="w-8 h-8 rounded-full bg-gray-300"
+            />
+          ) : (
+            <div className="w-8 h-8 bg-background-light dark:bg-background-dark rounded-full flex items-center justify-center">
+              <FaUserAlt className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            </div>
+          )}
         </div>
         <div className="flex-1">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
             <span className="font-semibold text-black dark:text-white">{comment.author.nickname}</span>
-            <span className="mx-1">·</span>
+            {comment.author.id === user?.id && (
+              <span className="px-1.5 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                나
+              </span>
+            )}
+            {comment.author.id === post.authorId && (
+              <span className="px-1.5 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                작성자
+              </span>
+            )}
+            <span className="mx-0.5">·</span>
             <span>{getRelativeTime(comment.createdAt.toString())}</span>
           </div>
           <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">{comment.content}</p>
@@ -189,7 +202,7 @@ const PostComment: React.FC<PostCommentProps> = ({ post, setPost }) => {
 
   return (
     <div className="bg-white dark:bg-[#292929] rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{post.comments.length} Comments</h3>
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">댓글 ({post.comments.length})</h3>
       <div className="mb-6">
         <textarea
           value={newComment.content}

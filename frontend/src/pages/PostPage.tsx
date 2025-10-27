@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaEye, FaHeart, FaComment, FaShare, FaUser } from "react-icons/fa";
+import { FaEye, FaHeart, FaComment, FaShare, FaUserAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import PostComment from "../components/PostComment";
 import type { PostDetailDto } from "../../../shared/types";
@@ -8,9 +8,10 @@ import { api } from "../api/axios";
 import { useAuthStore } from "../store/authStore";
 import { useTheme } from "../hooks/useTheme";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 const PostPage: React.FC = () => {
-  const { id: postId } = useParams<{ id: string }>();
+  const { category = "", id: postId } = useParams<{ category: string; id: string }>();
   const navigate = useNavigate();
 
   const [isLiked, setIsLiked] = useState(false);
@@ -169,6 +170,44 @@ const PostPage: React.FC = () => {
     // TODO: 사용자 프로필 모달/팝업 구현
   };
 
+  // 게시글 수정 핸들러
+  const handleEdit = () => {
+    if (!post) return;
+    navigate(`/${category}/edit/${post.id}`);
+  };
+
+  // 게시글 삭제 핸들러
+  const handleDelete = async () => {
+    if (!post) return;
+
+    const result = await Swal.fire({
+      title: "게시글을 삭제하시겠습니까?",
+      text: "삭제된 게시글은 복구할 수 없습니다.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "삭제",
+      cancelButtonText: "취소",
+      background: theme === "dark" ? "#343434" : "#fff",
+      color: theme === "dark" ? "#e5e7eb" : "#1f2937",
+      confirmButtonColor: theme === "dark" ? "#F97171" : "#EF4444",
+      cancelButtonColor: theme === "dark" ? "#9DC183" : "#4F7942",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await api.post(`/post/delete/${post.id}`);
+        toast.success("게시글이 삭제되었습니다.");
+        navigate(`/${category}`, { replace: true });
+      } catch (error) {
+        console.error("게시글 삭제 오류:", error);
+        toast.error("게시글 삭제에 실패했습니다.");
+      }
+    }
+  };
+
+  // 작성자인지 확인
+  const isAuthor = user?.id === post?.authorId;
+
   // 상대적 시간 표시 함수
   const getRelativeTime = (dateString: string) => {
     const now = new Date();
@@ -211,9 +250,9 @@ const PostPage: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-8 mt-16">
       {/* 게시글 헤더 */}
       <div className="bg-white dark:bg-[#292929] rounded-lg shadow-md p-6 mb-6">
-        {/* 신고하기 버튼 (모바일에서만 표시) */}
-        <div className="flex items-center justify-between mb-4 md:hidden">
-          <div className="flex items-center gap-3">
+        {/* 작성자 정보 (모바일) */}
+        <div className="md:hidden mb-3">
+          <div className="flex items-center justify-between">
             <div
               className="group flex items-center gap-3 cursor-pointer"
               onClick={() => handleUserProfileClick(post.authorId)}
@@ -226,26 +265,72 @@ const PostPage: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <FaUser className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <div className="w-8 h-8 bg-background-light dark:bg-background-dark rounded-full flex items-center justify-center">
+                    <FaUserAlt className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  </div>
                 )}
               </div>
               <span className="text-gray-600 dark:text-gray-400 group-hover:text-primary-light dark:group-hover:text-primary-dark group-hover:underline transition-colors">
                 {post.authorNickname}
               </span>
             </div>
-            <span className="text-gray-500 dark:text-gray-500">{getRelativeTime(post.createdAt.toString())}</span>
+            {isAuthor ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleEdit}
+                  className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                  title="수정"
+                >
+                  <FaEdit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  title="삭제"
+                >
+                  <FaTrash className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors">
+                신고하기
+              </button>
+            )}
           </div>
-          <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors">
-            신고하기
-          </button>
+          <div className="mt-2 text-sm text-gray-500 dark:text-gray-500">
+            {getRelativeTime(post.createdAt.toString())}
+          </div>
         </div>
 
-        {/* 제목과 신고하기 버튼 (데스크톱) */}
+        {/* 제목과 버튼들 (데스크톱) */}
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex-1">{post.title}</h1>
-          <button className="hidden md:block text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors ml-4">
-            신고하기
-          </button>
+          <div className="hidden md:flex items-center gap-2 ml-4">
+            {isAuthor ? (
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-background-light dark:hover:bg-background-dark transition-colors flex items-center gap-1 group"
+                >
+                  <FaEdit className="w-3.5 h-3.5 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+                  <span className="group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+                    수정
+                  </span>
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-background-light dark:hover:bg-background-dark transition-colors flex items-center gap-1 group"
+                >
+                  <FaTrash className="w-3.5 h-3.5 group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors" />
+                  <span className="group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors">삭제</span>
+                </button>
+              </>
+            ) : (
+              <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors">
+                신고하기
+              </button>
+            )}
+          </div>
         </div>
 
         {/* 작성자 정보와 통계 */}
@@ -263,7 +348,9 @@ const PostPage: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <FaUser className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <div className="w-8 h-8 bg-background-light dark:bg-background-dark rounded-full flex items-center justify-center">
+                    <FaUserAlt className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  </div>
                 )}
               </div>
               <span className="text-gray-600 dark:text-gray-400 group-hover:text-primary-light dark:group-hover:text-primary-dark group-hover:underline transition-colors">
@@ -339,7 +426,7 @@ const PostPage: React.FC = () => {
       </div>
 
       {/* 댓글 섹션 */}
-      <PostComment post={post} setPost={setPost} />
+      <PostComment post={{ ...post, authorId: post.authorId }} setPost={setPost} />
     </div>
   );
 };
