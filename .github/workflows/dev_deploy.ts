@@ -32,7 +32,7 @@ const wf = workflow({
         // 동적 태그 생성을 위한 메타데이터 스텝
         {
           name: "Extract Docker metadata for frontend",
-          id: "meta",
+          id: "meta_fe",
           uses: "docker/metadata-action@v5",
           with: {
             "images": imageNameFrontend,
@@ -53,15 +53,15 @@ const wf = workflow({
             "push": true,
             "platforms": "linux/amd64, linux/arm64",
             // 'meta' 스텝의 출력을 사용
-            "tags": "${{ steps.meta.outputs.tags }}",
-            "labels": "${{ steps.meta.outputs.labels }}",
+            "tags": "${{ steps.meta_fe.outputs.tags }}",
+            "labels": "${{ steps.meta_fe.outputs.labels }}",
             "cache-from": "type=gha",
             "cache-to": "type=gha,mode=max",
           },
         },
         {
           name: "Extract Docker metadata for backend",
-          id: "meta",
+          id: "meta_be",
           uses: "docker/metadata-action@v5",
           with: {
             "images": imageNameBackend,
@@ -82,8 +82,8 @@ const wf = workflow({
             "push": true,
             "platforms": "linux/amd64, linux/arm64",
             // 'meta' 스텝의 출력을 사용
-            "tags": "${{ steps.meta.outputs.tags }}",
-            "labels": "${{ steps.meta.outputs.labels }}",
+            "tags": "${{ steps.meta_be.outputs.tags }}",
+            "labels": "${{ steps.meta_be.outputs.labels }}",
             "cache-from": "type=gha",
             "cache-to": "type=gha,mode=max",
           },

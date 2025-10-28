@@ -24,7 +24,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GH_PAT }}
       - name: Extract Docker metadata for frontend
-        id: meta
+        id: meta_fe
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/phone-link-org/phone-link/frontend
@@ -39,12 +39,12 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           platforms: linux/amd64, linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta_fe.outputs.tags }}
+          labels: ${{ steps.meta_fe.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Extract Docker metadata for backend
-        id: meta
+        id: meta_be
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/phone-link-org/phone-link/backend
@@ -59,7 +59,7 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           platforms: linux/amd64, linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta_be.outputs.tags }}
+          labels: ${{ steps.meta_be.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
