@@ -6,6 +6,11 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
 
 COPY . .
+ARG VITE_NAVER_CLIENT_ID
+ARG VITE_KAKAO_CLIENT_ID
+
+ENV VITE_NAVER_CLIENT_ID=$VITE_NAVER_CLIENT_ID
+ENV VITE_KAKAO_CLIENT_ID=$VITE_KAKAO_CLIENT_ID
 
 RUN npm run build --prefix frontend
 
