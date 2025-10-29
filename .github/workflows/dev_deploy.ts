@@ -57,6 +57,11 @@ const wf = workflow({
             "labels": "${{ steps.meta_fe.outputs.labels }}",
             "cache-from": "type=gha",
             "cache-to": "type=gha,mode=max",
+            // VITE_ 환경변수 주입
+            "build-args": [
+              "VITE_NAVER_CLIENT_ID=${{ secrets.VITE_NAVER_CLIENT_ID }}",
+              "VITE_KAKAO_CLIENT_ID=${{ secrets.VITE_KAKAO_CLIENT_ID }}"
+            ].join("\n"),
           },
         },
         {

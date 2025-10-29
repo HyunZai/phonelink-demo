@@ -43,6 +43,9 @@ jobs:
           labels: ${{ steps.meta_fe.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |-
+            VITE_NAVER_CLIENT_ID=${{ secrets.VITE_NAVER_CLIENT_ID }}
+            VITE_KAKAO_CLIENT_ID=${{ secrets.VITE_KAKAO_CLIENT_ID }}
       - name: Extract Docker metadata for backend
         id: meta_be
         uses: docker/metadata-action@v5
