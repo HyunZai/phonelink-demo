@@ -56,3 +56,35 @@ export const SORT_ORDER = {
 } as const;
 
 export type SortOrder = (typeof SORT_ORDER)[keyof typeof SORT_ORDER];
+
+export const REPORTABLE_TYPES = {
+  POST: "POST",
+  COMMENT: "COMMENT",
+  USER: "USER",
+  STORE: "STORE",
+} as const;
+
+export type ReportableType =
+  (typeof REPORTABLE_TYPES)[keyof typeof REPORTABLE_TYPES];
+
+export const REASON_TYPES = {
+  SPAM: "SPAM",
+  ABUSE: "ABUSE",
+  OBSCENITY: "OBSCENITY",
+  ILLEGAL: "ILLEGAL",
+  PRIVACY: "PRIVACY",
+  COPYRIGHT: "COPYRIGHT",
+  OTHER: "OTHER",
+} as const;
+
+export type ReasonType = (typeof REASON_TYPES)[keyof typeof REASON_TYPES];
+
+export const REPORT_STATUSES = {
+  PENDING: "PENDING",
+  PROCESSING: "PROCESSING",
+  RESOLVED: "RESOLVED",
+  DISMISSED: "DISMISSED",
+} as const;
+
+export type ReportStatus =
+  (typeof REPORT_STATUSES)[keyof typeof REPORT_STATUSES];
