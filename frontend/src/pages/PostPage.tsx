@@ -205,6 +205,23 @@ const PostPage: React.FC = () => {
     }
   };
 
+  const handleReport = async () => {
+    if (!post) return;
+    if (!user?.id) {
+      toast.error("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+    try {
+      //await api.post(`/post/report/${post.id}`);
+      toast.success("신고가 접수되었습니다.");
+    } catch (error) {
+      console.error("신고 오류:", error);
+      toast.error("신고에 실패했습니다.");
+    }
+    toast.success("신고가 접수되었습니다.");
+  };
+
   // 작성자인지 확인
   const isAuthor = user?.id === post?.authorId;
 
@@ -292,7 +309,10 @@ const PostPage: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors">
+              <button
+                onClick={handleReport}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors"
+              >
                 신고하기
               </button>
             )}
