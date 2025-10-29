@@ -59,6 +59,7 @@ const wf = workflow({
             "cache-to": "type=gha,mode=max",
             // VITE_ 환경변수 주입
             "build-args": [
+              "VITE_API_URL=${{ secrets.VITE_API_URL || '' }}",
               "VITE_NAVER_CLIENT_ID=${{ secrets.VITE_NAVER_CLIENT_ID }}",
               "VITE_KAKAO_CLIENT_ID=${{ secrets.VITE_KAKAO_CLIENT_ID }}",
               "VITE_NAVER_REDIRECT_URI=${{ secrets.VITE_NAVER_REDIRECT_URI }}",
