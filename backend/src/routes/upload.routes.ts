@@ -33,9 +33,11 @@ router.post("/delete", isAuthenticated, (req, res) => {
   }
 
   try {
-    // __dirname은 현재 파일 위치 기준이므로, 프로젝트 루트부터 경로를 재구성합니다.
-    //const filePath = path.join(__dirname, "../../", imageUrl.substring(1));
-    const filePath = path.join("/app", imageUrl);
+    const filePath = path.join(
+      __dirname,
+      process.env.ENVIRONMENT === "prod" ? "../../../../uploads/images" : "../../uploads/images",
+      imageUrl,
+    );
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);

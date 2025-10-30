@@ -11,9 +11,7 @@ type UploadType = (typeof ALLOWED_TYPES)[number];
 
 // ENVIRONMENT에 따른 업로드 경로 분기처리
 const env = process.env.ENVIRONMENT;
-const baseUploadDir = path.join(__dirname, env === "prod" ? "../../../uploads/images" : "../../uploads/images");
-console.log(`env: ${env}`);
-console.log(`baseUploadDir: ${baseUploadDir}`);
+const baseUploadDir = path.join(__dirname, env === "prod" ? "../../../../uploads/images" : "../../uploads/images");
 
 // Multer 스토리지 설정
 const storage = multer.diskStorage({
