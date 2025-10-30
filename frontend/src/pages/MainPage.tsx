@@ -9,10 +9,14 @@ const MainPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-6 mt-16">
         <BannerSlider />
       </div>
-      <div className="max-w-4xl mx-auto px-4 pb-4 mb-12">
+      <div className="max-w-4xl mx-auto px-4 pb-4 mb-3">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RecentOffersList />
-          <CommunityRecentPosts />
+          <div className="min-h-[500px]">
+            <RecentOffersList />
+          </div>
+          <div className="min-h-[500px]">
+            <CommunityRecentPosts />
+          </div>
         </div>
       </div>
     </div>
