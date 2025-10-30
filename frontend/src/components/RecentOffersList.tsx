@@ -52,7 +52,7 @@ const RecentOffersList: React.FC = () => {
 
   return (
     <div className="h-full">
-      <div className="bg-white dark:bg-[#292929] rounded-lg shadow-lg p-4 h-full flex flex-col">
+      <div className="bg-white dark:bg-[#292929] rounded-lg shadow-lg p-4 flex flex-col h-full">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">최근 등록</h2>

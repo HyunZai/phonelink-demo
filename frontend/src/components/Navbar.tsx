@@ -15,6 +15,28 @@ const Navbar: React.FC = () => {
   const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null);
   const [communityMenuItems, setCommunityMenuItems] = useState<CategoryDto[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileCommunityOpen, setIsMobileCommunityOpen] = useState(false);
+
+  // 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // 모바일 메뉴가 열려있고, 클릭한 요소가 nav 내부에 없으면 메뉴 닫기
+      if (isMobileMenuOpen && !target.closest("nav")) {
+        setIsMobileMenuOpen(false);
+        setIsMobileCommunityOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
 
   // 드롭다운 열기 (지연 없이)
   const handleDropdownEnter = () => {
@@ -60,7 +82,7 @@ const Navbar: React.FC = () => {
   }, [dropdownTimeout]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-8 shadow-sm bg-background-light dark:shadow-[#404040] dark:shadow-sm  dark:bg-background-dark">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 shadow-sm bg-background-light dark:shadow-[#404040] dark:shadow-sm  dark:bg-background-dark">
       <div className="flex items-center">
         <Link to="/">
           <button className="text-2xl font-bold mr-8 text-primary-light dark:text-primary-dark hover:opacity-80 transition-opacity">
@@ -142,7 +164,7 @@ const Navbar: React.FC = () => {
           )}
         </ul>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <ThemeToggleButton />
         {isAuthenticated ? (
           <Link to="/mypage">
@@ -175,10 +197,89 @@ const Navbar: React.FC = () => {
             </button>
           </Link>
         )}
-        <button className="flex md:hidden items-center justify-center w-10 h-10 ml-2" aria-label="메뉴">
+        <button
+          className="flex md:hidden items-center justify-center w-10 h-10 text-foreground-light dark:text-foreground-dark"
+          aria-label="메뉴"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
           <IoMenuOutline size={28}></IoMenuOutline>
         </button>
       </div>
+
+      {/* 모바일 메뉴 */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 right-0 bg-white dark:bg-[#292929] shadow-lg border-t border-gray-200 dark:border-gray-500">
+          <div className="px-4 py-3 space-y-2">
+            {/* 가격 비교 */}
+            <Link to="/offer" onClick={() => setIsMobileMenuOpen(false)}>
+              <button className="w-full text-left px-4 py-2 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f1f1f] rounded-lg transition-colors">
+                가격 비교
+              </button>
+            </Link>
+
+            {/* 매장 관리 (SELLER만) */}
+            {user?.role === ROLES.SELLER && user.storeId && (
+              <Link to={`/store/${user.storeId}`} onClick={() => setIsMobileMenuOpen(false)}>
+                <button className="w-full text-left px-4 py-2 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f1f1f] rounded-lg transition-colors">
+                  매장 관리
+                </button>
+              </Link>
+            )}
+
+            {/* 정보 */}
+            <Link to={`/${category}`} onClick={() => setIsMobileMenuOpen(false)}>
+              <button className="w-full text-left px-4 py-2 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f1f1f] rounded-lg transition-colors">
+                정보
+              </button>
+            </Link>
+
+            {/* 커뮤니티 (하위 메뉴 포함) */}
+            <div className="relative">
+              <button
+                onClick={() => setIsMobileCommunityOpen(!isMobileCommunityOpen)}
+                className="w-full text-left px-4 py-2 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f1f1f] rounded-lg transition-colors flex items-center justify-between"
+              >
+                <span>커뮤니티</span>
+                <IoChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${isMobileCommunityOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {/* 하위 메뉴 */}
+              {isMobileCommunityOpen && (
+                <div className="ml-4 mt-2 space-y-1 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg p-2">
+                  {isLoadingCategories ? (
+                    <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">로딩 중...</div>
+                  ) : (
+                    communityMenuItems.map((item, index) => (
+                      <Link
+                        key={index}
+                        to={`/${item.name.toLowerCase()}`}
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          setIsMobileCommunityOpen(false);
+                        }}
+                        className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-[#2a2a2a] rounded-lg transition-colors"
+                      >
+                        {item.description}
+                      </Link>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 관리자 (ADMIN만) */}
+            {user?.role === ROLES.ADMIN && (
+              <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)}>
+                <button className="w-full text-left px-4 py-2 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f1f1f] rounded-lg transition-colors">
+                  관리자
+                </button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

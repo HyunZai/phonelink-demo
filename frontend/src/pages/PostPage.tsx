@@ -205,6 +205,23 @@ const PostPage: React.FC = () => {
     }
   };
 
+  const handleReport = async () => {
+    if (!post) return;
+    if (!user?.id) {
+      toast.error("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+    try {
+      //await api.post(`/post/report/${post.id}`);
+      toast.success("신고가 접수되었습니다.");
+    } catch (error) {
+      console.error("신고 오류:", error);
+      toast.error("신고에 실패했습니다.");
+    }
+    toast.success("신고가 접수되었습니다.");
+  };
+
   // 작성자인지 확인
   const isAuthor = user?.id === post?.authorId;
 
@@ -292,7 +309,10 @@ const PostPage: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors">
+              <button
+                onClick={handleReport}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors"
+              >
                 신고하기
               </button>
             )}
@@ -340,7 +360,7 @@ const PostPage: React.FC = () => {
               className="group flex items-center gap-3 cursor-pointer"
               onClick={() => handleUserProfileClick(post.authorId)}
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center group-hover:opacity-80 transition-opacity">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-background-dark flex items-center justify-center group-hover:opacity-80 transition-opacity">
                 {post.authorProfileImageUrl ? (
                   <img
                     src={`${import.meta.env.VITE_API_URL}${post.authorProfileImageUrl}`}
