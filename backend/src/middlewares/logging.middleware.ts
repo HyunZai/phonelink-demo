@@ -88,6 +88,16 @@ export const requestLoggingMiddleware = (req: Request, res: Response, next: Next
  * Express의 에러 핸들러로 사용 (app.use()의 마지막에 위치)
  */
 export const errorLoggingMiddleware = (error: Error, req: Request, res: Response, next: NextFunction) => {
+  console.log("===== [errorLoggingMiddleware 디버깅] =====");
+  console.log("error:", error);
+  console.log("error.message:", error?.message);
+  console.log("error.stack:", error?.stack);
+  console.log("req.method:", req.method);
+  console.log("req.originalUrl:", req.originalUrl);
+  console.log("req.body:", req.body);
+  console.log("req.headers:", req.headers);
+  console.log("res.statusCode:", res.statusCode);
+  console.log("=========================================");
   const reqWithId = req as RequestWithId;
   const responseTime = Date.now() - reqWithId.startTime; // 에러 발생까지의 시간
 
