@@ -360,7 +360,7 @@ const PostPage: React.FC = () => {
               className="group flex items-center gap-3 cursor-pointer"
               onClick={() => handleUserProfileClick(post.authorId)}
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center group-hover:opacity-80 transition-opacity">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-background-dark flex items-center justify-center group-hover:opacity-80 transition-opacity">
                 {post.authorProfileImageUrl ? (
                   <img
                     src={`${import.meta.env.VITE_API_URL}${post.authorProfileImageUrl}`}
