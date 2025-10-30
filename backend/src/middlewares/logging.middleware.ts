@@ -87,17 +87,7 @@ export const requestLoggingMiddleware = (req: Request, res: Response, next: Next
  * 에러 로깅 미들웨어 - 처리되지 않은 에러를 자동으로 캐치하고 로깅
  * Express의 에러 핸들러로 사용 (app.use()의 마지막에 위치)
  */
-export const errorLoggingMiddleware = (error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.log("===== [errorLoggingMiddleware 디버깅] =====");
-  console.log("error:", error);
-  console.log("error.message:", error?.message);
-  console.log("error.stack:", error?.stack);
-  console.log("req.method:", req.method);
-  console.log("req.originalUrl:", req.originalUrl);
-  console.log("req.body:", req.body);
-  console.log("req.headers:", req.headers);
-  console.log("res.statusCode:", res.statusCode);
-  console.log("=========================================");
+export const errorLoggingMiddleware = (error: Error, req: Request, res: Response) => {
   const reqWithId = req as RequestWithId;
   const responseTime = Date.now() - reqWithId.startTime; // 에러 발생까지의 시간
 
@@ -130,7 +120,7 @@ export const errorLoggingMiddleware = (error: Error, req: Request, res: Response
     success: false,
     message: "Internal server error",
     requestId: reqWithId.requestId, // 에러 추적을 위한 요청 ID
-    ...(process.env.NODE_ENV === "development" && {
+    ...(process.env.ENVIRONMENT === "dev" && {
       error: error.message, // 개발 환경에서만 에러 메시지 노출
       stack: error.stack, // 개발 환경에서만 스택 트레이스 노출
     }),

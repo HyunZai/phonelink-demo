@@ -261,7 +261,7 @@ class Logger {
   ): Promise<void> {
     const entry = this.createLogEntry(LogLevel.DEBUG, message, undefined, additionalData, requestInfo);
 
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.ENVIRONMENT === "dev") {
       console.debug(`[${entry.timestamp}] ${entry.level}: ${message}`);
     }
 
