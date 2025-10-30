@@ -11,16 +11,28 @@ const BannerSlider = () => {
   const [isHovered, setIsHovered] = useState(false);
 
   const banners: BannerImage[] = [
+    // {
+    //   src: "/images/banners/test_banner_1.webp",
+    //   alt: "배너 1",
+    // },
+    // {
+    //   src: "/images/banners/test_banner_2.jpg",
+    //   alt: "배너 2",
+    // },
+    // {
+    //   src: "/images/banners/test_banner_3.webp",
+    //   alt: "배너 3",
+    // },
     {
-      src: "/images/banners/test_banner_1.webp",
+      src: "/images/banners/b1.png",
       alt: "배너 1",
     },
     {
-      src: "/images/banners/test_banner_2.jpg",
+      src: "/images/banners/b2.png",
       alt: "배너 2",
     },
     {
-      src: "/images/banners/test_banner_3.webp",
+      src: "/images/banners/b3.png",
       alt: "배너 3",
     },
   ];
@@ -43,7 +55,7 @@ const BannerSlider = () => {
 
   return (
     <div
-      className="relative w-full h-16 sm:h-20 md:h-24 lg:h-28 overflow-hidden rounded-lg shadow-lg"
+      className="relative w-full h-16 sm:h-24 md:h-32 lg:h-40 overflow-hidden rounded-lg shadow-lg"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
