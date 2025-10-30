@@ -174,7 +174,7 @@ const TipsPage: React.FC = () => {
       </div>
 
       {/* 인기 게시글 섹션 */}
-      {popularPosts.length > 0 && (
+      {category !== "tips" && popularPosts.length > 0 && (
         <div className="my-4">
           <div className="bg-white dark:bg-[#292929] rounded-lg shadow-md p-4 sm:p-6 border border-orange-200 dark:border-orange-800">
             <div className="flex items-center gap-2 mb-4">
