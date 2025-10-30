@@ -6,6 +6,7 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
 
 COPY . .
+
 ARG VITE_API_URL
 ARG VITE_NAVER_CLIENT_ID
 ARG VITE_NAVER_REDIRECT_URI
