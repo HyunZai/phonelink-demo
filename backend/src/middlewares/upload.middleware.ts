@@ -2,13 +2,16 @@ import fs from "fs";
 import { Request } from "express";
 import multer from "multer";
 import path from "path";
+import dotenv from "dotenv";
+dotenv.config();
 
 // 허용된 업로드 타입과 디렉토리명
 const ALLOWED_TYPES = ["store", "device", "profile", "post", "carrier"] as const;
 type UploadType = (typeof ALLOWED_TYPES)[number];
 
-//const baseUploadDir = path.join(__dirname, "../../uploads/images");
-const baseUploadDir = "/app/uploads/images";
+// ENVIRONMENT에 따른 업로드 경로 분기처리
+const env = process.env.ENVIRONMENT;
+const baseUploadDir = path.join(__dirname, env === "prod" ? "../../../uploads/images" : "../../uploads/images");
 
 // Multer 스토리지 설정
 const storage = multer.diskStorage({

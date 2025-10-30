@@ -35,8 +35,8 @@ app.use(requestLoggingMiddleware);
 
 app.use(
   cors({
-    //origin: "http://localhost:5173", // 프론트 주소
-    origin: "http://phonelink-frontend-service.phonelink:80", // 프론트 주소
+    origin:
+      process.env.ENVIRONMENT === "prod" ? "http://phonelink-frontend-service.phonelink:80" : "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
   }),
@@ -51,7 +51,7 @@ app.use(
     saveUninitialized: true,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // 프로덕션 환경에서는 https를 사용하므로 true
+      secure: process.env.ENVIRONMENT === "prod", // 프로덕션 환경에서는 https를 사용하므로 true
       maxAge: 1000 * 60 * 60 * 24, // 쿠키 유효 기간: 1일
     },
   }),
