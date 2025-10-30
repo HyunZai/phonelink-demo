@@ -212,8 +212,8 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background-light dark:bg-background-dark">
-      <div className="w-full max-w-md p-8 space-y-6 rounded-lg shadow-md bg-white dark:bg-[#292929]">
+    <div className="flex items-center justify-center min-h-[90vh] bg-background-light dark:bg-background-dark py-12 px-4">
+      <div className="w-full max-w-md p-6 sm:p-8 space-y-6 rounded-lg shadow-md bg-white dark:bg-[#292929]">
         <h1 className="text-3xl font-bold text-center text-primary-light dark:text-primary-dark">PhoneLink</h1>
         <form onSubmit={handleLogin}>
           <div className="space-y-4">

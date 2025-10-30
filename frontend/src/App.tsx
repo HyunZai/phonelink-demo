@@ -5,6 +5,7 @@ import { useContext, useEffect, useRef } from "react";
 import { ThemeContext } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import OfferPage from "./pages/OfferPage";
 import OfferDetailPage from "./pages/OfferDetailPage";
 import NotFound from "./pages/NotFound";
@@ -64,43 +65,46 @@ function App() {
   }
 
   return (
-    <div className="App">
+    <div className="App flex flex-col min-h-screen">
       <Navbar />
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/auth/callback/:provider" element={<SsoCallbackPage />} />
-        <Route path="/social-link/:provider/callback" element={<SocialLinkCallbackPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/offer" element={<OfferPage />} />
-        <Route path="/store/:storeId" element={<StorePage />} />
-        <Route path="/offer/:id" element={<OfferDetailPage />} />
-        <Route path="/store" element={<StorePage />} />
-        <Route path="/:category" element={<TipsPage />} />
-        <Route path="/:category/:id" element={<PostPage />} />
-        <Route path="/:category/write/" element={<PostWritePage />} />
-        <Route path="/:category/edit/:postId" element={<PostWritePage />} />
-        <Route path="/community" element={<CommunityPage />} />
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback/:provider" element={<SsoCallbackPage />} />
+          <Route path="/social-link/:provider/callback" element={<SocialLinkCallbackPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/offer" element={<OfferPage />} />
+          <Route path="/store/:storeId" element={<StorePage />} />
+          <Route path="/offer/:id" element={<OfferDetailPage />} />
+          <Route path="/store" element={<StorePage />} />
+          <Route path="/:category" element={<TipsPage />} />
+          <Route path="/:category/:id" element={<PostPage />} />
+          <Route path="/:category/write/" element={<PostWritePage />} />
+          <Route path="/:category/edit/:postId" element={<PostWritePage />} />
+          <Route path="/community" element={<CommunityPage />} />
 
-        {/* role 상관없이 로그인만 체크 */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/mypage" element={<MyPage />} />
-        </Route>
+          {/* role 상관없이 로그인만 체크 */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/mypage" element={<MyPage />} />
+          </Route>
 
-        {/* SELLER */}
-        <Route element={<ProtectedRoute allowedRoles={[ROLES.SELLER]} />}>
-          <Route path="/store/register" element={<StoreRegisterPage />} />
-        </Route>
+          {/* SELLER */}
+          <Route element={<ProtectedRoute allowedRoles={[ROLES.SELLER]} />}>
+            <Route path="/store/register" element={<StoreRegisterPage />} />
+          </Route>
 
-        {/* ADMIN */}
-        <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
-          <Route path="/admin" element={<AdminPage />} />
-        </Route>
+          {/* ADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
 
-        {/* 404 페이지 */}
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* 404 페이지 */}
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Footer />
       <Toaster
         position="top-center"
         duration={3000}
