@@ -87,7 +87,7 @@ export const requestLoggingMiddleware = (req: Request, res: Response, next: Next
  * 에러 로깅 미들웨어 - 처리되지 않은 에러를 자동으로 캐치하고 로깅
  * Express의 에러 핸들러로 사용 (app.use()의 마지막에 위치)
  */
-export const errorLoggingMiddleware = (error: Error, req: Request, res: Response) => {
+export const errorLoggingMiddleware = (error: Error, req: Request, res: Response, next: NextFunction) => {
   const reqWithId = req as RequestWithId;
   const responseTime = Date.now() - reqWithId.startTime; // 에러 발생까지의 시간
 
