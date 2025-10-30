@@ -7,7 +7,8 @@ import path from "path";
 const ALLOWED_TYPES = ["store", "device", "profile", "post", "carrier"] as const;
 type UploadType = (typeof ALLOWED_TYPES)[number];
 
-const baseUploadDir = path.join(__dirname, "../../uploads/images");
+//const baseUploadDir = path.join(__dirname, "../../uploads/images");
+const baseUploadDir = "/app/uploads/images";
 
 // Multer 스토리지 설정
 const storage = multer.diskStorage({
