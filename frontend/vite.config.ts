@@ -14,4 +14,10 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 3000,
+    allowedHosts: [
+      "phonelink.k8s.bumgu.com",
+    ],
+  }
 });
