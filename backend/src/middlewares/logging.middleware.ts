@@ -32,21 +32,12 @@ export const requestLoggingMiddleware = (req: Request, res: Response, next: Next
     userId: reqWithId.user?.id, // 인증된 사용자 ID
   };
 
-  // 요청 시작 로깅 (모든 요청에 대해)
-  logger.info(
-    `Request started: ${req.method} ${req.originalUrl}`,
-    {
-      headers: req.headers,
-      query: req.query,
-      body: req.method !== "GET" ? req.body : undefined, // GET 요청은 body 로깅 생략
-    },
-    requestInfo,
-  );
+  // 요청 시작 로깅은 제거 (에러 발생 시에만 상세 정보 기록으로 충분)
 
   // 응답 완료 시 로깅을 위한 res.send 오버라이드
   const originalSend = res.send;
   res.send = function (data) {
-    const responseTime = Date.now() - reqWithId.startTime; // 응답 시간 계산
+    const responseTime = Date.now() - reqWithId.startTime;
 
     const responseInfo = {
       ...requestInfo,
@@ -54,30 +45,21 @@ export const requestLoggingMiddleware = (req: Request, res: Response, next: Next
       responseTime,
     };
 
-    // HTTP 상태 코드에 따른 로깅 레벨 구분
+    // 에러 응답만 로깅 (성공 로그는 제거 - 에러 추적 집중)
     if (res.statusCode >= 400) {
-      // 에러 응답 로깅 (4xx, 5xx)
+      // 에러 응답은 ERROR 레벨로 로깅
       logger.error(
         `Request failed: ${req.method} ${req.originalUrl}`,
         undefined,
         {
-          responseData: data,
+          response: typeof data === "string" ? JSON.parse(data) : data,
           statusCode: res.statusCode,
-        },
-        responseInfo,
-      );
-    } else {
-      // 성공 응답 로깅 (2xx, 3xx)
-      logger.info(
-        `Request completed: ${req.method} ${req.originalUrl}`,
-        {
-          responseSize: JSON.stringify(data).length, // 응답 크기 정보
         },
         responseInfo,
       );
     }
 
-    return originalSend.call(this, data); // 원본 send 메서드 호출
+    return originalSend.call(this, data);
   };
 
   next();
@@ -103,14 +85,21 @@ export const errorLoggingMiddleware = (error: Error, req: Request, res: Response
     responseTime,
   };
 
-  // 에러 로깅 (스택 트레이스 포함)
-  logger.error(
+  // 에러 로깅 (핵심: errorId 반환하여 응답에 포함)
+  const errorId = logger.error(
     `Unhandled error in ${req.method} ${req.originalUrl}`,
     error,
     {
-      requestBody: req.body, // 요청 본문 (디버깅용)
-      requestQuery: req.query, // 쿼리 파라미터
-      requestHeaders: req.headers, // 요청 헤더
+      request: {
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      },
+      headers: {
+        // 민감 정보 제외
+        authorization: req.headers.authorization ? "Bearer ***" : undefined,
+        cookie: req.headers.cookie ? "***" : undefined,
+      },
     },
     errorInfo,
   );
@@ -118,14 +107,16 @@ export const errorLoggingMiddleware = (error: Error, req: Request, res: Response
   // 응답이 이미 시작되었다면 Express 기본 에러 핸들러에 위임
   if (res.headersSent) return next(error);
 
-  // 클라이언트에게 에러 응답 전송
+  // 클라이언트에게 에러 응답 전송 (errorId 포함하여 추적 가능)
+  res.setHeader("X-Error-Id", errorId); // 헤더에도 포함
   res.status(500).json({
     success: false,
     message: "Internal server error",
-    requestId: reqWithId.requestId, // 에러 추적을 위한 요청 ID
+    requestId: reqWithId.requestId,
+    errorId, // 에러 추적용 ID (엔지니어가 로그 검색 시 사용)
     ...(process.env.ENVIRONMENT === "dev" && {
-      error: error.message, // 개발 환경에서만 에러 메시지 노출
-      stack: error.stack, // 개발 환경에서만 스택 트레이스 노출
+      error: error.message,
+      stack: error.stack,
     }),
   });
 };

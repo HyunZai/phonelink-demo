@@ -16,7 +16,7 @@ router.post("/", async (req: Request, res: Response) => {
     const logEntry = req.body;
 
     // 프론트엔드 로그를 백엔드 로거로 전송
-    await logger.info(
+    logger.info(
       `Frontend Log: ${logEntry.message}`,
       {
         frontendLog: logEntry,
@@ -32,7 +32,7 @@ router.post("/", async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true });
   } catch (error) {
-    await logger.error(
+    logger.error(
       "Failed to process frontend log",
       error as Error,
       {

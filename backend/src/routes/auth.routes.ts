@@ -691,18 +691,13 @@ router.post("/unlink/:provider", isAuthenticated, async (req: AuthenticatedReque
   }
 });
 
-/**
- * 🔒 안전한 소셜 계정 연동 엔드포인트
- * 인증된 사용자만 자신의 계정에 소셜 계정을 연동할 수 있습니다.
- * 팝업 기반으로 CSRF 공격을 방지하고, 중복 연동을 체크합니다.
- */
+// 마이페이지에서 소셜로그인 계정 연동
 router.post("/link/:provider", isAuthenticated, async (req: AuthenticatedRequest, res) => {
   try {
     const { provider } = req.params;
     const { code } = req.body;
     const userId = req.user?.id;
 
-    // 🔒 보안 검증 1: 인증된 사용자인지 확인
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -710,7 +705,6 @@ router.post("/link/:provider", isAuthenticated, async (req: AuthenticatedRequest
       });
     }
 
-    // 🔒 보안 검증 2: 지원하는 프로바이더인지 확인
     if (!Object.values(SSO_PROVIDERS).includes(provider as (typeof SSO_PROVIDERS)[keyof typeof SSO_PROVIDERS])) {
       return res.status(400).json({
         success: false,
@@ -718,7 +712,7 @@ router.post("/link/:provider", isAuthenticated, async (req: AuthenticatedRequest
       });
     }
 
-    // 🔒 보안 검증 3: Authorization code가 있는지 확인
+    // Authorization code가 있는지 확인
     if (!code) {
       return res.status(400).json({
         success: false,
@@ -726,7 +720,7 @@ router.post("/link/:provider", isAuthenticated, async (req: AuthenticatedRequest
       });
     }
 
-    // 소셜 프로필 정보 가져오기 (연동 모드)
+    // 소셜 프로필 정보 가져오기
     const userProfile = await getUserProfile(provider, code, true);
     if (!userProfile) {
       return res.status(500).json({
