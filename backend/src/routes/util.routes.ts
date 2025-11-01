@@ -1,6 +1,7 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { AppDataSource } from "../db";
 import { Category } from "../typeorm/categories.entity";
+import { handleError } from "../utils/errorHandler";
 
 const router = Router();
 
@@ -26,11 +27,9 @@ router.get("/community-categories", async (req, res) => {
       data: responseData,
     });
   } catch (error) {
-    console.error("커뮤니티 카테고리 조회 오류:", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+    handleError(error, req, res, {
       message: "커뮤니티 카테고리 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_COMMUNITY_CATEGORIES_ERROR",
     });
   }
 });

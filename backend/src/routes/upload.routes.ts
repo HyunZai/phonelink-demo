@@ -5,6 +5,7 @@ import path from "path";
 import { ROLES } from "../../../shared/constants";
 import { hasRole, isAuthenticated } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/upload.middleware";
+import { handleError } from "../utils/errorHandler";
 
 const router = Router();
 
@@ -47,10 +48,10 @@ router.post("/delete", isAuthenticated, (req, res) => {
       res.status(200).json({ success: true, message: "이미지가 존재하지 않습니다." });
     }
   } catch (error) {
-    console.error("이미지 삭제 중 오류 발생:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "이미지 삭제 중 오류가 발생했습니다.",
+      errorCode: "DELETE_IMAGE_ERROR",
+      additionalContext: { imageUrl },
     });
   }
 });

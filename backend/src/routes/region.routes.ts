@@ -1,8 +1,9 @@
-import { Router, Request } from "express";
+import { Router, Request, Response } from "express";
 import { AppDataSource } from "../db";
 import { Region } from "../typeorm/regions.entity";
 import { SelectQueryBuilder } from "typeorm";
 import { OfferRegionDto } from "shared/region.types";
+import { handleError } from "../utils/errorHandler";
 
 // 시/군/구 조회 요청 인터페이스
 interface RegionRequest extends Request {
@@ -39,12 +40,10 @@ router.get("/sidos", async (req, res) => {
       success: true,
       data: rows,
     });
-  } catch (err) {
-    console.error("Error fetching regions(sido):", err);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error",
+  } catch (error) {
+    handleError(error, req, res, {
       message: "시/도 지역 데이터를 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_SIDO_REGIONS_ERROR",
     });
   }
 });
@@ -85,12 +84,11 @@ router.get("/sigungus", async (req: RegionRequest, res) => {
       success: true,
       data: rows,
     });
-  } catch (err) {
-    console.error("Error fetching regions(sigungu):", err);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error",
+  } catch (error) {
+    handleError(error, req, res, {
       message: "시/군/구 지역 데이터를 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_SIGUNGU_REGIONS_ERROR",
+      additionalContext: { sidoCode: req.query.sidoCode },
     });
   }
 });
