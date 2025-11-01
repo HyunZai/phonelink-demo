@@ -104,8 +104,6 @@ const OfferDetailPage: React.FC = () => {
         setOfferFormData(offerResponse);
         setAddons(addonsResponse || []);
 
-        console.log(JSON.stringify(addonsResponse, null, 2));
-
         // 초기에 모든 부가서비스 선택
         if (addonsResponse && addonsResponse.length > 0) {
           setSelectedAddonIds(new Set(addonsResponse.map((_, idx) => idx)));
