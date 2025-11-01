@@ -1,5 +1,7 @@
-import fs from "fs";
 import path from "path";
+import winston from "winston";
+import DailyRotateFile from "winston-daily-rotate-file";
+import { v4 as uuidv4 } from "uuid";
 
 export enum LogLevel {
   ERROR = "ERROR",
@@ -8,161 +10,106 @@ export enum LogLevel {
   DEBUG = "DEBUG",
 }
 
-export interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  message: string;
-  file?: string;
-  line?: number;
-  function?: string;
-  stack?: string;
-  requestId?: string;
-  userId?: string;
-  ip?: string;
-  userAgent?: string;
-  method?: string;
-  url?: string;
-  statusCode?: number;
-  responseTime?: number;
-  data?: unknown;
-}
+// Winston 형식 - JSON 구조화된 로깅
+const logFormat = winston.format.combine(
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  winston.format.errors({ stack: true }),
+  winston.format.json(),
+);
+
+// 콘솔 포맷 (개발 환경에서만)
+const consoleFormat = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  winston.format.printf((info) => {
+    const { timestamp, level, message, errorId, requestId, error } = info;
+    const importantMeta: Record<string, unknown> = {};
+    if (errorId) importantMeta.errorId = errorId;
+    if (requestId) importantMeta.requestId = requestId;
+    if (error) importantMeta.error = error;
+    const metaStr = Object.keys(importantMeta).length ? JSON.stringify(importantMeta, null, 2) : "";
+    return `${timestamp} [${level}]: ${message} ${metaStr}`;
+  }),
+);
 
 class Logger {
+  private winstonLogger: winston.Logger;
   private logDir: string;
-  private maxFileSize: number;
-  private maxFiles: number;
 
   constructor() {
     this.logDir = path.join(process.cwd(), "logs");
-    this.maxFileSize = 10 * 1024 * 1024; // 10MB
-    this.maxFiles = 5;
 
-    // 로그 디렉토리 생성
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
-    }
-  }
+    const transports: winston.transport[] = [];
 
-  private getLogFileName(level: LogLevel): string {
-    const date = new Date().toISOString().split("T")[0];
-    return path.join(this.logDir, `${level.toLowerCase()}-${date}.log`);
-  }
-
-  private formatLogEntry(entry: LogEntry): string {
-    const baseInfo = {
-      timestamp: entry.timestamp,
-      level: entry.level,
-      message: entry.message,
-      ...(entry.file && { file: entry.file }),
-      ...(entry.line && { line: entry.line }),
-      ...(entry.function && { function: entry.function }),
-      ...(entry.requestId && { requestId: entry.requestId }),
-      ...(entry.userId && { userId: entry.userId }),
-      ...(entry.ip && { ip: entry.ip }),
-      ...(entry.userAgent && { userAgent: entry.userAgent }),
-      ...(entry.method && { method: entry.method }),
-      ...(entry.url && { url: entry.url }),
-      ...(entry.statusCode && { statusCode: entry.statusCode }),
-      ...(entry.responseTime && { responseTime: `${entry.responseTime}ms` }),
-    };
-
-    let logString = JSON.stringify(baseInfo, null, 2);
-
-    if (entry.stack) {
-      logString += `\nStack Trace:\n${entry.stack}`;
-    }
-
-    if (entry.data) {
-      logString += `\nAdditional Data:\n${JSON.stringify(entry.data, null, 2)}`;
-    }
-
-    return logString + "\n" + "=".repeat(80) + "\n";
-  }
-
-  private async writeToFile(level: LogLevel, entry: LogEntry): Promise<void> {
-    const fileName = this.getLogFileName(level);
-    const logContent = this.formatLogEntry(entry);
-
-    try {
-      // 파일 크기 체크 및 로테이션
-      if (fs.existsSync(fileName)) {
-        const stats = fs.statSync(fileName);
-        if (stats.size > this.maxFileSize) {
-          await this.rotateLogFile(fileName);
-        }
-      }
-
-      fs.appendFileSync(fileName, logContent, "utf8");
-    } catch (error) {
-      console.error("Failed to write to log file:", error);
-    }
-  }
-
-  private async rotateLogFile(fileName: string): Promise<void> {
-    try {
-      // 기존 파일들을 번호로 순환
-      for (let i = this.maxFiles - 1; i > 0; i--) {
-        const oldFile = `${fileName}.${i}`;
-        const newFile = `${fileName}.${i + 1}`;
-
-        if (fs.existsSync(oldFile)) {
-          if (i === this.maxFiles - 1) {
-            fs.unlinkSync(oldFile); // 가장 오래된 파일 삭제
-          } else {
-            fs.renameSync(oldFile, newFile);
-          }
-        }
-      }
-
-      // 현재 파일을 .1로 이동
-      fs.renameSync(fileName, `${fileName}.1`);
-    } catch (error) {
-      console.error("Failed to rotate log file:", error);
-    }
-  }
-
-  private createLogEntry(
-    level: LogLevel,
-    message: string,
-    error?: Error,
-    additionalData?: unknown,
-    requestInfo?: {
-      requestId?: string;
-      userId?: string;
-      ip?: string;
-      userAgent?: string;
-      method?: string;
-      url?: string;
-      statusCode?: number;
-      responseTime?: number;
-    },
-  ): LogEntry {
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      ...(requestInfo && requestInfo),
-      ...(error && {
-        stack: error.stack,
-        file: this.getCallerInfo().file,
-        line: this.getCallerInfo().line,
-        function: this.getCallerInfo().function,
+    // ERROR 로그 파일(별도 파일로 분리)
+    transports.push(
+      new DailyRotateFile({
+        dirname: this.logDir,
+        filename: "error-%DATE%.log",
+        datePattern: "YYYY-MM-DD",
+        level: "error",
+        format: logFormat,
+        maxSize: "20m",
+        maxFiles: "30d", // 에러는 30일 보관
       }),
-      ...(additionalData ? { data: additionalData } : {}),
-    };
+    );
 
-    return entry;
+    // 통합 로그 파일 (모든 레벨)
+    transports.push(
+      new DailyRotateFile({
+        dirname: this.logDir,
+        filename: "combined-%DATE%.log",
+        datePattern: "YYYY-MM-DD",
+        format: logFormat,
+        maxSize: "20m",
+        maxFiles: "7d", // 일반 로그는 7일 보관
+      }),
+    );
+
+    // 콘솔 출력 (환경별 설정)
+    transports.push(
+      new winston.transports.Console({
+        format: process.env.ENVIRONMENT === "dev" ? consoleFormat : logFormat,
+        level: process.env.ENVIRONMENT === "dev" ? "debug" : "error", // 프로덕션에서는 ERROR만
+      }),
+    );
+
+    this.winstonLogger = winston.createLogger({
+      level: process.env.LOG_LEVEL || (process.env.ENVIRONMENT === "dev" ? "debug" : "info"),
+      format: logFormat,
+      transports,
+      exceptionHandlers: [
+        new DailyRotateFile({
+          dirname: this.logDir,
+          filename: "exceptions-%DATE%.log",
+          datePattern: "YYYY-MM-DD",
+          format: logFormat,
+          maxSize: "20m",
+          maxFiles: "30d",
+        }),
+      ],
+      rejectionHandlers: [
+        new DailyRotateFile({
+          dirname: this.logDir,
+          filename: "rejections-%DATE%.log",
+          datePattern: "YYYY-MM-DD",
+          format: logFormat,
+          maxSize: "20m",
+          maxFiles: "30d",
+        }),
+      ],
+    });
   }
 
-  private getCallerInfo(): { file: string; line: number; function: string } {
-    const stack = new Error().stack;
+  private getCallerInfo(error?: Error): { file: string; line: number; function: string } {
+    const stack = error?.stack || new Error().stack;
     if (!stack) {
       return { file: "unknown", line: 0, function: "unknown" };
     }
 
     const lines = stack.split("\n");
-    // 4번째 줄이 실제 호출한 함수 (Logger -> log method -> getCallerInfo -> 실제 호출)
-    const callerLine = lines[4] || lines[3];
+    // 실제 에러 발생 위치 찾기 (Logger 메서드 호출을 건너뛰고)
+    const callerLine = lines[4] || lines[3] || lines[2];
 
     if (!callerLine) {
       return { file: "unknown", line: 0, function: "unknown" };
@@ -181,7 +128,7 @@ class Logger {
     return { file: "unknown", line: 0, function: "unknown" };
   }
 
-  async error(
+  private buildErrorMeta(
     message: string,
     error?: Error,
     additionalData?: unknown,
@@ -195,77 +142,166 @@ class Logger {
       statusCode?: number;
       responseTime?: number;
     },
-  ): Promise<void> {
-    const entry = this.createLogEntry(LogLevel.ERROR, message, error, additionalData, requestInfo);
+  ): Record<string, unknown> {
+    const errorId = uuidv4(); // 에러 추적용 고유 ID
+    const callerInfo = this.getCallerInfo(error);
 
-    // 콘솔에도 출력
-    console.error(`[${entry.timestamp}] ${entry.level}: ${message}`, error);
-
-    // 파일에 기록
-    await this.writeToFile(LogLevel.ERROR, entry);
-  }
-
-  async warn(
-    message: string,
-    additionalData?: unknown,
-    requestInfo?: {
-      requestId?: string;
-      userId?: string;
-      ip?: string;
-      userAgent?: string;
-      method?: string;
-      url?: string;
-      statusCode?: number;
-      responseTime?: number;
-    },
-  ): Promise<void> {
-    const entry = this.createLogEntry(LogLevel.WARN, message, undefined, additionalData, requestInfo);
-
-    console.warn(`[${entry.timestamp}] ${entry.level}: ${message}`);
-    await this.writeToFile(LogLevel.WARN, entry);
-  }
-
-  async info(
-    message: string,
-    additionalData?: unknown,
-    requestInfo?: {
-      requestId?: string;
-      userId?: string;
-      ip?: string;
-      userAgent?: string;
-      method?: string;
-      url?: string;
-      statusCode?: number;
-      responseTime?: number;
-    },
-  ): Promise<void> {
-    const entry = this.createLogEntry(LogLevel.INFO, message, undefined, additionalData, requestInfo);
-
-    console.info(`[${entry.timestamp}] ${entry.level}: ${message}`);
-    await this.writeToFile(LogLevel.INFO, entry);
-  }
-
-  async debug(
-    message: string,
-    additionalData?: unknown,
-    requestInfo?: {
-      requestId?: string;
-      userId?: string;
-      ip?: string;
-      userAgent?: string;
-      method?: string;
-      url?: string;
-      statusCode?: number;
-      responseTime?: number;
-    },
-  ): Promise<void> {
-    const entry = this.createLogEntry(LogLevel.DEBUG, message, undefined, additionalData, requestInfo);
-
-    if (process.env.ENVIRONMENT === "dev") {
-      console.debug(`[${entry.timestamp}] ${entry.level}: ${message}`);
+    const meta: Record<string, unknown> = {
+      // 에러 추적 ID
+      errorId,
+      // 에러 기본 정보
+      message,
+      // 에러 상세 (ERROR 레벨일 때만)
+      ...(error && {
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        },
+      }),
+      // 발생 위치
+      source: {
+        file: callerInfo.file,
+        line: callerInfo.line,
+        function: callerInfo.function,
+      },
+      // 요청 컨텍스트 (에러 추적)
+      ...(requestInfo && {
+        request: {
+          id: requestInfo.requestId,
+          method: requestInfo.method,
+          url: requestInfo.url,
+          statusCode: requestInfo.statusCode,
+          responseTime: requestInfo.responseTime ? `${requestInfo.responseTime}ms` : undefined,
+        },
+        user: {
+          id: requestInfo.userId,
+          ip: requestInfo.ip,
+          userAgent: requestInfo.userAgent,
+        },
+      }),
+    };
+    if (additionalData) {
+      meta.context = additionalData;
     }
 
-    await this.writeToFile(LogLevel.DEBUG, entry);
+    return meta;
+  }
+
+  // ERROR: 에러 추적에 최적화 (동기적으로 에러 ID 생성 후 반환)
+  error(
+    message: string,
+    error?: Error,
+    additionalData?: unknown,
+    requestInfo?: {
+      requestId?: string;
+      userId?: string;
+      ip?: string;
+      userAgent?: string;
+      method?: string;
+      url?: string;
+      statusCode?: number;
+      responseTime?: number;
+    },
+  ): string {
+    // 에러 ID 생성 (응답에도 포함하여 추적 가능)
+    const errorId = uuidv4();
+    const meta = this.buildErrorMeta(message, error, additionalData, requestInfo);
+    meta.errorId = errorId;
+
+    this.winstonLogger.error(message, meta);
+    return errorId; // 에러 ID 반환
+  }
+
+  // WARN: 경고 로그
+  warn(
+    message: string,
+    additionalData?: unknown,
+    requestInfo?: {
+      requestId?: string;
+      userId?: string;
+      ip?: string;
+      userAgent?: string;
+      method?: string;
+      url?: string;
+      statusCode?: number;
+      responseTime?: number;
+    },
+  ): void {
+    const meta: Record<string, unknown> = {
+      message,
+    };
+    if (requestInfo) {
+      meta.request = {
+        id: requestInfo.requestId,
+        method: requestInfo.method,
+        url: requestInfo.url,
+      };
+      meta.user = {
+        id: requestInfo.userId,
+      };
+    }
+    if (additionalData) {
+      meta.context = additionalData;
+    }
+    this.winstonLogger.warn(message, meta);
+  }
+
+  // INFO: 중요 정보만 (에러 추적에 도움되는 것만)
+  info(
+    message: string,
+    additionalData?: unknown,
+    requestInfo?: {
+      requestId?: string;
+      userId?: string;
+      ip?: string;
+      userAgent?: string;
+      method?: string;
+      url?: string;
+      statusCode?: number;
+      responseTime?: number;
+    },
+  ): void {
+    const meta: Record<string, unknown> = {};
+    if (requestInfo) {
+      meta.request = {
+        id: requestInfo.requestId,
+        method: requestInfo.method,
+        url: requestInfo.url,
+        responseTime: requestInfo.responseTime ? `${requestInfo.responseTime}ms` : undefined,
+      };
+    }
+    if (additionalData) {
+      meta.context = additionalData;
+    }
+    this.winstonLogger.info(message, meta);
+  }
+
+  // DEBUG: 개발 환경에서만
+  debug(
+    message: string,
+    additionalData?: unknown,
+    requestInfo?: {
+      requestId?: string;
+      userId?: string;
+      ip?: string;
+      userAgent?: string;
+      method?: string;
+      url?: string;
+      statusCode?: number;
+      responseTime?: number;
+    },
+  ): void {
+    if (process.env.ENVIRONMENT === "dev") {
+      const meta: Record<string, unknown> = {};
+      if (requestInfo) {
+        meta.requestId = requestInfo.requestId;
+      }
+      if (additionalData) {
+        meta.context = additionalData;
+      }
+      this.winstonLogger.debug(message, meta);
+    }
   }
 }
 

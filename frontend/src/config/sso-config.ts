@@ -23,3 +23,15 @@ export const ssoConfig = {
   },
   // TODO: 추후 kakao, google, apple 등 다른 프로바이더 설정 추가
 };
+
+// http://phonelink.k8s.bumgu.com/auth/callback/kakao
+// http://phonelink.k8s.bumgu.com/social-link/kakao/callback
+// https://phonelink.k8s.bumgu.com/auth/callback/kakao
+// https://phonelink.k8s.bumgu.com/social-link/kakao/callback
+
+// http://localhost:5173/auth/callback/kakao
+// http://localhost:5173/social-link/kakao/callback
+
+//http://localhost:5173/auth/callback/kakao?
+// code=ekw2faYrFdep8bja_37Hk1aBxGb2RlrSORntiLRUqpmudQ9EhTjwVwAAAAQKDRmQAAABmj3JfAqoblpFv_zasg
+// state=ff773dc7641c1c22cfdef2bfc12b8adf

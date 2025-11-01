@@ -1,8 +1,7 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { AppDataSource } from "../db";
-
+import { handleError } from "../utils/errorHandler";
 import { OfferModelDto, PhoneStorageDto } from "shared/types";
-
 import { PhoneManufacturer } from "../typeorm/phoneManufacturers.entity";
 import { PhoneModel } from "../typeorm/phoneModels.entity";
 import { PhoneStorage } from "../typeorm/phoneStorage.entity";
@@ -12,7 +11,7 @@ import { PhoneDevice } from "../typeorm/phoneDevices.entity";
 const router = Router();
 
 // 제조사 조회
-router.get("/manufacturers", async (req, res) => {
+router.get("/manufacturers", async (req: Request, res: Response) => {
   try {
     const manufacturerRepo = AppDataSource.getRepository(PhoneManufacturer);
     const rows = await manufacturerRepo.find();
@@ -22,16 +21,14 @@ router.get("/manufacturers", async (req, res) => {
       data: rows,
     });
   } catch (error) {
-    console.error("Error fetching manufacturers:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+    handleError(error, req, res, {
       message: "제조사 정보를 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_MANUFACTURERS_ERROR",
     });
   }
 });
 
-router.get("/models", async (req, res) => {
+router.get("/models", async (req: Request, res: Response) => {
   try {
     const { manufacturerId } = req.query;
     const modelRepo = AppDataSource.getRepository(PhoneModel);
@@ -51,16 +48,15 @@ router.get("/models", async (req, res) => {
       data: resRows,
     });
   } catch (error) {
-    console.error("Error fetching models:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+    handleError(error, req, res, {
       message: "모델 정보를 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_MODELS_ERROR",
+      additionalContext: { manufacturerId: req.query.manufacturerId },
     });
   }
 });
 
-router.get("/storages", async (req, res) => {
+router.get("/storages", async (req: Request, res: Response) => {
   try {
     const { modelId } = req.query;
     const phoneStorageRepo = AppDataSource.getRepository(PhoneStorage);
@@ -79,16 +75,15 @@ router.get("/storages", async (req, res) => {
       data: storages,
     });
   } catch (error) {
-    console.error("Error fetching storages:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+    handleError(error, req, res, {
       message: "저장소 정보를 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_STORAGES_ERROR",
+      additionalContext: { modelId: req.query.modelId },
     });
   }
 });
 
-router.get("/allStorages", async (req, res) => {
+router.get("/allStorages", async (req: Request, res: Response) => {
   try {
     const phoneStorageRepo = AppDataSource.getRepository(PhoneStorage);
     const storages = await phoneStorageRepo.find({ order: { id: "ASC" } });
@@ -98,16 +93,14 @@ router.get("/allStorages", async (req, res) => {
       data: storages,
     });
   } catch (error) {
-    console.error("Error fetching storages:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+    handleError(error, req, res, {
       message: "핸드폰 용량 정보를 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_ALL_STORAGES_ERROR",
     });
   }
 });
 
-router.get("/carriers", async (req, res) => {
+router.get("/carriers", async (req: Request, res: Response) => {
   try {
     const carrierRepo = AppDataSource.getRepository(Carrier);
     const rows = await carrierRepo.find();
@@ -116,17 +109,15 @@ router.get("/carriers", async (req, res) => {
       data: rows,
     });
   } catch (error) {
-    console.error("Error fetching carriers:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+    handleError(error, req, res, {
       message: "통신사 정보를 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_CARRIERS_ERROR",
     });
   }
 });
 
 // 제조사, 모델, 기기를 계층 구조로 반환하는 엔드포인트
-router.get("/devices-structured", async (_, res) => {
+router.get("/devices-structured", async (req: Request, res: Response) => {
   try {
     const deviceRepo = AppDataSource.getRepository(PhoneDevice);
 
@@ -199,11 +190,9 @@ router.get("/devices-structured", async (_, res) => {
       data: structuredData,
     });
   } catch (error) {
-    console.error("Error fetching structured devices", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "기기 정보 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_DEVICES_STRUCTURED_ERROR",
     });
   }
 });
