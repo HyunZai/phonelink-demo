@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { logger } from "../utils/Logger";
+import { handleError } from "../utils/errorHandler";
 
 // Express Request 타입 확장
 declare module "express-serve-static-core" {
@@ -32,23 +33,10 @@ router.post("/", async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true });
   } catch (error) {
-    logger.error(
-      "Failed to process frontend log",
-      error as Error,
-      {
-        logEntry: req.body,
-      },
-      {
-        requestId: req.requestId,
-        method: req.method,
-        url: req.originalUrl,
-        ip: req.ip,
-      },
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to process log",
+    handleError(error, req, res, {
+      message: "프론트엔드 로그 처리 중 오류가 발생했습니다.",
+      errorCode: "PROCESS_FRONTEND_LOG_ERROR",
+      additionalContext: { logEntry: req.body },
     });
   }
 });

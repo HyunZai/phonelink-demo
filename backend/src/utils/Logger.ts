@@ -10,11 +10,24 @@ export enum LogLevel {
   DEBUG = "DEBUG",
 }
 
-// Winston 형식 - JSON 구조화된 로깅
+// 파일 로그용 포맷 - 가독성 좋은 JSON 포맷
+const fileFormat = winston.format.printf((info) => {
+  const { timestamp, level, message, ...meta } = info;
+  const logEntry = {
+    timestamp,
+    level,
+    message,
+    ...meta,
+  };
+  // JSON을 예쁘게 포맷팅 (2칸 들여쓰기) + 구분선 추가
+  return `${"=".repeat(80)}\n${JSON.stringify(logEntry, null, 2)}\n`;
+});
+
+// Winston 형식 - 파일용 (가독성 좋은 JSON)
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   winston.format.errors({ stack: true }),
-  winston.format.json(),
+  fileFormat,
 );
 
 // 콘솔 포맷 (개발 환경에서만)
@@ -67,9 +80,10 @@ class Logger {
     );
 
     // 콘솔 출력 (환경별 설정)
+    // 프로덕션에서는 파일 로그만 사용, 개발 환경에서는 콘솔 포맷 사용
     transports.push(
       new winston.transports.Console({
-        format: process.env.ENVIRONMENT === "dev" ? consoleFormat : logFormat,
+        format: process.env.ENVIRONMENT === "dev" ? consoleFormat : fileFormat,
         level: process.env.ENVIRONMENT === "dev" ? "debug" : "error", // 프로덕션에서는 ERROR만
       }),
     );

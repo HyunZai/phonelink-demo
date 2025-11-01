@@ -19,8 +19,9 @@ import { User } from "../typeorm/users.entity";
 import { Seller } from "../typeorm/sellers.entity";
 import { UserFavorites } from "../typeorm/userFavorites.entity";
 import { AppDataSource } from "../db";
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { ROLES } from "../../../shared/constants";
+import { handleError } from "../utils/errorHandler";
 
 const router = Router();
 
@@ -36,12 +37,10 @@ router.get("/stores", async (req, res) => {
       success: true,
       data: stores,
     });
-  } catch (e) {
-    console.error("Error during fetching stores", e);
-    res.status(500).json({
-      success: false,
+  } catch (error) {
+    handleError(error, req, res, {
       message: "매장 목록을 불러오는 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_STORES_ERROR",
     });
   }
 });
@@ -85,12 +84,11 @@ router.get("/check-name", isAuthenticated, hasRole([ROLES.SELLER, ROLES.ADMIN]),
         },
       });
     }
-  } catch (e) {
-    console.error("Error during checking store name", e);
-    res.status(500).json({
-      success: false,
+  } catch (error) {
+    handleError(error, req, res, {
       message: "매장명 확인 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "CHECK_STORE_NAME_ERROR",
+      additionalContext: { inputStoreName: req.query.inputStoreName },
     });
   }
 });
@@ -166,11 +164,9 @@ router.post("/register", isAuthenticated, hasRole([ROLES.SELLER, ROLES.ADMIN]), 
       },
     });
   } catch (error) {
-    console.error("Error during store registration", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "매장 등록 요청 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "REGISTER_STORE_ERROR",
     });
   }
 });
@@ -203,11 +199,9 @@ router.get("/pending", isAuthenticated, hasRole([ROLES.ADMIN]), async (req, res)
       data: pendingStores,
     });
   } catch (error) {
-    console.error("Error during fetching pending stores", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "승인 대기 매장 목록 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_PENDING_STORES_ERROR",
     });
   }
 });
@@ -297,11 +291,10 @@ router.get("/:storeId/offers", async (req, res) => {
       data: formattedData,
     });
   } catch (error) {
-    console.error("Error during fetching offers", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "가격 정보 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_STORE_OFFERS_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -424,11 +417,10 @@ router.post(
     } catch (error) {
       // 에러 발생 시 모든 변경사항을 롤백합니다.
       await queryRunner.rollbackTransaction();
-      console.error("Error during saving offers", error);
-      res.status(500).json({
-        success: false,
+      handleError(error, req, res, {
         message: "가격 정보 저장 중 오류가 발생했습니다.",
-        error: "Internal Server Error",
+        errorCode: "SAVE_STORE_OFFERS_ERROR",
+        additionalContext: { storeId: req.params.storeId },
       });
     } finally {
       // 사용한 QueryRunner를 반드시 해제해줘야 합니다.
@@ -459,11 +451,10 @@ router.get("/:storeId/addons", async (req, res) => {
       data: parsedResult,
     });
   } catch (error) {
-    console.error("Error during fetching addons", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "부가서비스 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_STORE_ADDONS_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -506,11 +497,10 @@ router.get("/:storeId/detail", async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error during fetching store detail", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "매장 상세정보 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_STORE_DETAIL_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -585,11 +575,10 @@ router.post(
         data: store,
       });
     } catch (error) {
-      console.error("Error during saving store info", error);
-      res.status(500).json({
-        success: false,
+      handleError(error, req, res, {
         message: "매장 기본 정보 저장 중 오류가 발생했습니다.",
-        error: "Internal Server Error",
+        errorCode: "UPDATE_STORE_INFO_ERROR",
+        additionalContext: { storeId: req.params.storeId },
       });
     }
   },
@@ -635,11 +624,10 @@ router.post("/:storeId/addon-save", isAuthenticated, hasRole([ROLES.SELLER, ROLE
       data: result,
     });
   } catch (error) {
-    console.error("Error during saving addons", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "부가서비스 저장 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "SAVE_STORE_ADDONS_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -656,11 +644,10 @@ router.get("/:storeId/req-plans", isAuthenticated, async (req, res) => {
       data: plans,
     });
   } catch (error) {
-    console.error("Error fetching req plans", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "요금제 정보 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_REQ_PLANS_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -699,11 +686,10 @@ router.post("/:storeId/req-plans", isAuthenticated, hasRole(["SELLER"]), async (
       data: result,
     });
   } catch (error) {
-    console.error("Error saving req plans", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "요금제 저장 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "SAVE_REQ_PLANS_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -736,11 +722,10 @@ router.get("/favorite", isAuthenticated, async (req, res) => {
       data: isFavorite,
     });
   } catch (error) {
-    console.error("Error during fetching favorite status", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "즐겨찾기 상태 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_FAVORITE_STATUS_ERROR",
+      additionalContext: { userId: req.query.userId, storeId: req.query.storeId },
     });
   }
 });
@@ -789,11 +774,10 @@ router.post("/favorite", isAuthenticated, async (req, res) => {
       data: isFavorite,
     });
   } catch (error) {
-    console.error("Error during toggling favorite", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "즐겨찾기 처리 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "TOGGLE_FAVORITE_ERROR",
+      additionalContext: { userId: req.body.userId, storeId: req.body.storeId },
     });
   }
 });
@@ -823,11 +807,10 @@ router.get("/:storeId/staffs", isAuthenticated, hasRole([ROLES.SELLER, ROLES.ADM
       data: staffs,
     });
   } catch (error) {
-    console.error("Error during fetching staffs", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "직원 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_STAFFS_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -884,11 +867,10 @@ router.post("/update-staff-status", isAuthenticated, hasRole([ROLES.SELLER, ROLE
     });
   } catch (error) {
     await queryRunner.rollbackTransaction();
-    console.error("Error during updating staff status", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "직원 상태 업데이트 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "UPDATE_STAFF_STATUS_ERROR",
+      additionalContext: { storeId: req.body.storeId, userId: req.body.userId, newStatus: req.body.newStatus },
     });
   } finally {
     await queryRunner.release();
@@ -941,11 +923,10 @@ router.get("/:storeId/available-models", isAuthenticated, hasRole([ROLES.SELLER,
       data: parsedResult,
     });
   } catch (error) {
-    console.error("Error during fetching available models", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "사용 가능한 모델 목록을 불러오는 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_AVAILABLE_MODELS_ERROR",
+      additionalContext: { storeId: req.params.storeId },
     });
   }
 });
@@ -1001,11 +982,10 @@ router.get("/:storeId/available-storages", isAuthenticated, hasRole([ROLES.SELLE
       data: parsedResult,
     });
   } catch (error) {
-    console.error("Error during fetching available storages", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "사용 가능한 용량 목록을 불러오는 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_AVAILABLE_STORAGES_ERROR",
+      additionalContext: { storeId: req.params.storeId, modelId: req.query.modelId },
     });
   }
 });

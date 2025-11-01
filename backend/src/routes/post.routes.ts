@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { AppDataSource } from "../db";
 import type {
   PostListDto,
@@ -17,6 +17,7 @@ import { AuthenticatedRequest, isAuthenticated, optionalAuth } from "../middlewa
 import { PostLike } from "../typeorm/postLikes.entity";
 import { Comment } from "../typeorm/comments.entity";
 import { CommentLike } from "../typeorm/commentLikes.entity";
+import { handleError } from "../utils/errorHandler";
 
 const router = Router();
 
@@ -79,11 +80,10 @@ router.post("/like/:postId", isAuthenticated, async (req: AuthenticatedRequest, 
     });
   } catch (error) {
     await queryRunner.rollbackTransaction();
-    console.error("좋아요 처리 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "좋아요 처리 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "TOGGLE_POST_LIKE_ERROR",
+      additionalContext: { postId: req.params.postId },
     });
   } finally {
     await queryRunner.release();
@@ -132,11 +132,9 @@ router.get("/my", isAuthenticated, async (req: AuthenticatedRequest, res) => {
       data: myPosts,
     });
   } catch (error) {
-    console.error("내가 쓴 게시글 조회 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "내가 쓴 게시글을 불러오는 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "FETCH_MY_POSTS_ERROR",
     });
   }
 });
@@ -197,11 +195,9 @@ router.get("/my-comment", isAuthenticated, async (req: AuthenticatedRequest, res
       data: myComments,
     });
   } catch (error) {
-    console.error("내가 쓴 댓글 조회 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "내가 쓴 댓글을 불러오는 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "FETCH_MY_COMMENTS_ERROR",
     });
   }
 });
@@ -284,10 +280,9 @@ router.get("/recent-posts", async (req, res) => {
       data: boards,
     });
   } catch (error) {
-    console.error("Error fetching boards with posts:", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+    handleError(error, req, res, {
+      message: "최근 게시글 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_RECENT_POSTS_ERROR",
     });
   }
 });
@@ -354,11 +349,10 @@ router.get("/:category", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("게시글 목록 조회 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "게시글 목록을 불러오는 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "FETCH_POST_LIST_ERROR",
+      additionalContext: { category: req.params.category, page: req.query.page, limit: req.query.limit },
     });
   }
 });
@@ -414,12 +408,10 @@ router.post("/write/:category", async (req, res) => {
   } catch (error) {
     // 트랜잭션 롤백
     await queryRunner.rollbackTransaction();
-
-    console.error("게시글 저장 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "게시글 저장 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "CREATE_POST_ERROR",
+      additionalContext: { category: req.params.category },
     });
   } finally {
     // QueryRunner 해제
@@ -639,11 +631,10 @@ router.get("/detail/:id", optionalAuth, async (req: AuthenticatedRequest, res) =
     });
   } catch (error) {
     await queryRunner.rollbackTransaction();
-    console.error("게시글 상세 조회 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "게시글을 불러오는 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "FETCH_POST_DETAIL_ERROR",
+      additionalContext: { postId: req.params.id },
     });
   } finally {
     await queryRunner.release();
@@ -671,11 +662,10 @@ router.post("/delete/:id", isAuthenticated, async (req: AuthenticatedRequest, re
     await AppDataSource.manager.save(post);
     return res.status(200).json({ success: true, message: "게시글이 삭제되었습니다." });
   } catch (error) {
-    console.error("게시글 삭제 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "게시글 삭제에 실패했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "DELETE_POST_ERROR",
+      additionalContext: { postId: req.params.id },
     });
   }
 });
@@ -699,11 +689,10 @@ router.post("/update/:id", isAuthenticated, async (req: AuthenticatedRequest, re
       data: savedPost,
     });
   } catch (error) {
-    console.error("게시글 수정 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "게시글 수정에 실패했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "UPDATE_POST_ERROR",
+      additionalContext: { postId: req.params.id },
     });
   }
 });
@@ -772,11 +761,10 @@ router.get("/popular/:category", async (req, res) => {
       data: popularPosts,
     });
   } catch (error) {
-    console.error("인기 게시글 조회 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "인기 게시글을 불러오는 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "FETCH_POPULAR_POSTS_ERROR",
+      additionalContext: { category: req.params.category },
     });
   }
 });
@@ -819,11 +807,9 @@ router.post("/comment", isAuthenticated, async (req: AuthenticatedRequest, res) 
       data: responseData,
     });
   } catch (error) {
-    console.error("댓글 작성 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "댓글을 작성하는 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "CREATE_COMMENT_ERROR",
     });
   }
 });
@@ -860,11 +846,10 @@ router.post("/comment/like", isAuthenticated, async (req: AuthenticatedRequest, 
       data: updatedLike,
     });
   } catch (error) {
-    console.error("댓글 좋아요 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "댓글 좋아요 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      errorCode: "TOGGLE_COMMENT_LIKE_ERROR",
+      additionalContext: { commentId: req.body.commentId },
     });
   }
 });

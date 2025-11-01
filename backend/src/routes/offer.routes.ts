@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { AppDataSource } from "../db";
 import { Offer } from "../typeorm/offers.entity";
+import { handleError } from "../utils/errorHandler";
 import {
   AddonFormData,
   OfferDetailFormData,
@@ -93,11 +94,10 @@ router.get("/latest", async (req, res) => {
       success: true,
       data: uniqueModelOffers,
     });
-  } catch {
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+  } catch (error) {
+    handleError(error, req, res, {
       message: "최근 등록 조건을 불러오는 중 오류가 발생했습니다.",
+      errorCode: "FETCH_LATEST_OFFERS_ERROR",
     });
   }
 });
@@ -153,11 +153,10 @@ router.get("/:offerId", async (req, res) => {
       data: offerDetail,
     });
   } catch (error) {
-    console.error("Error fetching offer detail data:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+    handleError(error, req, res, {
       message: "판매 정보를 불러오던 중 오류가 발생했습니다.",
+      errorCode: "FETCH_OFFER_DETAIL_ERROR",
+      additionalContext: { offerId: req.params.offerId },
     });
   }
 });
@@ -186,11 +185,10 @@ router.get("/:offerId/addon-info", async (req, res) => {
       data: addons,
     });
   } catch (error) {
-    console.error("Error fetching addon info:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error",
+    handleError(error, req, res, {
       message: "부가서비스 정보를 불러오던 중 오류가 발생했습니다.",
+      errorCode: "FETCH_ADDON_INFO_ERROR",
+      additionalContext: { offerId: req.params.offerId },
     });
   }
 });
@@ -376,11 +374,18 @@ router.post("/search", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("DB Error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal Server Error", // 에러 종류
-      message: "데이터를 조회하는 중 서버에서 오류가 발생했습니다.", // 프론트엔드가 사용할 수 있는 메시지
+    handleError(error, req, res, {
+      message: "데이터를 조회하는 중 서버에서 오류가 발생했습니다.",
+      errorCode: "SEARCH_OFFERS_ERROR",
+      additionalContext: {
+        regions: req.body.regions,
+        models: req.body.models,
+        carriers: req.body.carriers,
+        offerTypes: req.body.offerTypes,
+        page: req.body.page,
+        limit: req.body.limit,
+        sortOrder: req.body.sortOrder,
+      },
     });
   }
 });

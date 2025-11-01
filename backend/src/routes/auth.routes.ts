@@ -12,6 +12,7 @@ import axios from "axios";
 import { ssoConfig } from "../config/sso-config";
 import { isAuthenticated } from "../middlewares/auth.middleware";
 import { ROLES, SSO_PROVIDERS, USER_STATUSES } from "../../../shared/constants";
+import { handleError } from "../utils/errorHandler";
 
 const router = Router();
 
@@ -223,11 +224,9 @@ router.post("/login", async (req, res) => {
       data: { token, userAuthData },
     });
   } catch (error) {
-    console.error("Failed to Login", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "로그인 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "LOGIN_ERROR",
     });
   }
 });
@@ -266,8 +265,10 @@ router.get("/profile", isAuthenticated, async (req: AuthenticatedRequest, res: R
 
     res.status(200).json(userAuthData);
   } catch (error) {
-    console.error("Error fetching user profile:", error);
-    res.status(500).json({ message: "프로필 조회 중 서버 오류 발생" });
+    handleError(error, req, res, {
+      message: "프로필 조회 중 서버 오류가 발생했습니다.",
+      errorCode: "FETCH_USER_PROFILE_ERROR",
+    });
   }
 });
 
@@ -473,8 +474,11 @@ router.post("/callback/:provider", async (req, res) => {
       });
     }
   } catch (error) {
-    console.error(`${provider} callback error:`, error);
-    return res.status(500).json({ success: false, message: "Internal server error." });
+    handleError(error, req, res, {
+      message: "소셜 로그인 콜백 처리 중 오류가 발생했습니다.",
+      errorCode: "SSO_CALLBACK_ERROR",
+      additionalContext: { provider },
+    });
   }
 });
 
@@ -635,17 +639,16 @@ router.post("/withdrawal", async (req, res) => {
       message: "탈퇴가 완료되었습니다.",
     });
   } catch (error) {
-    console.error("탈퇴 처리 중 에러 발생:", error);
-    return res.status(500).json({
-      success: false,
-      message: "탈퇴 과정에서 서버 에러가 발생했습니다.",
+    handleError(error, req, res, {
+      message: "탈퇴 과정에서 서버 오류가 발생했습니다.",
+      errorCode: "WITHDRAWAL_ERROR",
     });
   }
 });
 
 router.post("/unlink/:provider", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  const { provider } = req.params;
   try {
-    const { provider } = req.params;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -682,19 +685,18 @@ router.post("/unlink/:provider", isAuthenticated, async (req: AuthenticatedReque
       data: true,
     });
   } catch (error) {
-    console.error("소셜 계정 해제 중 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "소셜 계정 해제 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "UNLINK_SOCIAL_ACCOUNT_ERROR",
+      additionalContext: { provider },
     });
   }
 });
 
 // 마이페이지에서 소셜로그인 계정 연동
 router.post("/link/:provider", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  const { provider } = req.params;
   try {
-    const { provider } = req.params;
     const { code } = req.body;
     const userId = req.user?.id;
 
@@ -808,10 +810,10 @@ router.post("/link/:provider", isAuthenticated, async (req: AuthenticatedRequest
       message: "소셜 계정이 성공적으로 연동되었습니다.",
     });
   } catch (error) {
-    console.error("소셜 계정 연동 중 오류:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "소셜 계정 연동 중 오류가 발생했습니다.",
+      errorCode: "LINK_SOCIAL_ACCOUNT_ERROR",
+      additionalContext: { provider },
     });
   }
 });

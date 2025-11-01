@@ -6,6 +6,7 @@ import { Store } from "../typeorm/stores.entity";
 import { Seller } from "../typeorm/sellers.entity";
 import { isAuthenticated, hasRole, AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { ROLES, USER_STATUSES } from "../../../shared/constants";
+import { handleError } from "../utils/errorHandler";
 import { PhoneModel } from "../typeorm/phoneModels.entity";
 import {
   RegionDto,
@@ -64,11 +65,10 @@ router.post("/store-confirm", async (req, res) => {
       message: approvalStatus === "APPROVED" ? "매장 승인 처리가 완료되었습니다." : "매장 거부 처리가 완료되었습니다.",
     });
   } catch (error) {
-    console.error("Error during store confirm transaction:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "매장 승인 처리 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "STORE_CONFIRM_ERROR",
+      additionalContext: { storeId: req.body.storeId, approvalStatus: req.body.approvalStatus },
     });
   }
 });
@@ -93,11 +93,9 @@ router.get("/phone-models", async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error fetching phone models:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "핸드폰 모델 정보를 불러오는 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_PHONE_MODELS_ERROR",
     });
   }
 });
@@ -145,11 +143,10 @@ router.get("/phone-detail/:id", async (req, res) => {
       data: responseData,
     });
   } catch (error) {
-    console.error("Error fetching phone model detail:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "핸드폰 모델 상세 정보를 불러오는 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_PHONE_MODEL_DETAIL_ERROR",
+      additionalContext: { modelId: req.params.id },
     });
   }
 });
@@ -285,11 +282,10 @@ router.post("/phone-detail/:id", async (req, res) => {
     }
   } catch (error) {
     await queryRunner.rollbackTransaction();
-    console.error("Error processing phone model detail:", error);
-    return res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "요청 처리 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "PROCESS_PHONE_MODEL_DETAIL_ERROR",
+      additionalContext: { modelId: req.params.id },
     });
   } finally {
     await queryRunner.release();
@@ -307,11 +303,9 @@ router.get("/storages", async (req, res) => {
       data: data,
     });
   } catch (error) {
-    console.error("Error fetching storages:", error);
-    res.status(500).json({
-      success: false,
-      message: "용량 정보 조회 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "용량 정보 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_STORAGES_ERROR",
     });
   }
 });
@@ -327,11 +321,10 @@ router.get("/storage/:id", async (req, res) => {
       data: data,
     });
   } catch (error) {
-    console.error("Error fetching storage:", error);
-    res.status(500).json({
-      success: false,
-      message: "용량 정보 조회 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "용량 정보 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_STORAGE_ERROR",
+      additionalContext: { storageId: req.params.id },
     });
   }
 });
@@ -364,11 +357,9 @@ router.post("/storage", async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error creating storage:", error);
-    res.status(500).json({
-      success: false,
-      message: "용량 정보 생성 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "용량 정보 생성 중 오류가 발생했습니다.",
+      errorCode: "CREATE_STORAGE_ERROR",
     });
   }
 });
@@ -384,11 +375,9 @@ router.get("/manufacturers", async (req, res) => {
       data: data,
     });
   } catch (error) {
-    console.error("Error fetching manufacturers:", error);
-    res.status(500).json({
-      success: false,
-      message: "제조사 정보 조회 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "제조사 정보 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_MANUFACTURERS_ERROR",
     });
   }
 });
@@ -404,11 +393,10 @@ router.get("/manufacturer/:id", async (req, res) => {
       data: data,
     });
   } catch (error) {
-    console.error("Error fetching manufacturer:", error);
-    res.status(500).json({
-      success: false,
-      message: "제조사 정보 조회 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "제조사 정보 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_MANUFACTURER_ERROR",
+      additionalContext: { manufacturerId: req.params.id },
     });
   }
 });
@@ -441,11 +429,9 @@ router.post("/manufacturer", async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error creating manufacturer:", error);
-    res.status(500).json({
-      success: false,
-      message: "제조사 정보 갱신 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "제조사 정보 갱신 중 오류가 발생했습니다.",
+      errorCode: "CREATE_MANUFACTURER_ERROR",
     });
   }
 });
@@ -461,11 +447,9 @@ router.get("/carriers", async (req, res) => {
       data: data,
     });
   } catch (error) {
-    console.error("Error fetching carriers:", error);
-    res.status(500).json({
-      success: false,
-      message: "통신사 정보 조회 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "통신사 정보 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_CARRIERS_ERROR",
     });
   }
 });
@@ -481,11 +465,10 @@ router.get("/carrier/:id", async (req, res) => {
       data: data,
     });
   } catch (error) {
-    console.error("Error fetching carrier:", error);
-    res.status(500).json({
-      success: false,
-      message: "통신사 정보 조회 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "통신사 정보 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_CARRIER_ERROR",
+      additionalContext: { carrierId: req.params.id },
     });
   }
 });
@@ -519,11 +502,9 @@ router.post("/carrier", async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error creating carrier:", error);
-    res.status(500).json({
-      success: false,
-      message: "통신사 정보 갱신 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "통신사 정보 갱신 중 오류가 발생했습니다.",
+      errorCode: "CREATE_CARRIER_ERROR",
     });
   }
 });
@@ -552,11 +533,9 @@ router.get("/users", async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({
-      success: false,
-      message: "회원 정보 조회 중 오류 발생",
-      error: "Internal Server Error",
+    handleError(error, req, res, {
+      message: "회원 정보 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_USERS_ERROR",
     });
   }
 });
@@ -677,11 +656,10 @@ router.get("/user-detail/:userId", async (req, res) => {
       data: userDetail,
     });
   } catch (error) {
-    console.error("Error fetching user detail:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "사용자 상세 정보 조회 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "FETCH_USER_DETAIL_ERROR",
+      additionalContext: { userId: req.params.userId },
     });
   }
 });
@@ -750,11 +728,10 @@ router.post("/suspend-user", async (req: AuthenticatedRequest, res) => {
   } catch (error) {
     // 트랜잭션 롤백
     await queryRunner.rollbackTransaction();
-    console.error("Error suspending user:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "사용자 정지 처리 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "SUSPEND_USER_ERROR",
+      additionalContext: { userId: req.body.userId },
     });
   } finally {
     // QueryRunner 해제
@@ -823,11 +800,10 @@ router.post("/unsuspend-user", async (req: AuthenticatedRequest, res) => {
   } catch (error) {
     // 트랜잭션 롤백
     await queryRunner.rollbackTransaction();
-    console.error("Error unsuspending user:", error);
-    res.status(500).json({
-      success: false,
+    handleError(error, req, res, {
       message: "사용자 정지 해제 처리 중 오류가 발생했습니다.",
-      error: "Internal Server Error",
+      errorCode: "UNSUSPEND_USER_ERROR",
+      additionalContext: { userId: req.body.userId },
     });
   } finally {
     // QueryRunner 해제
