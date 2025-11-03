@@ -276,7 +276,7 @@ const LoginPage: React.FC = () => {
         </form>
         <div className="text-sm text-center text-gray-500 dark:text-gray-400">
           <span>회원이 아니신가요? </span>
-          <Link to="/signup" className="font-medium text-primary-light hover:underline dark:text-primary-dark">
+          <Link to="/agreement" className="font-medium text-primary-light hover:underline dark:text-primary-dark">
             회원가입
           </Link>
         </div>

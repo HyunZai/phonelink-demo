@@ -32,8 +32,43 @@ const SignupPage: React.FC = () => {
   const location = useLocation();
   const addressDetailRef = useRef<HTMLInputElement>(null);
 
+  // 동의 정보 검증 및 SSO 회원가입 정보 처리
   useEffect(() => {
-    if (location.state?.ssoData) {
+    // 동의 정보가 없으면 동의 페이지로 리다이렉트
+    const agreementData = sessionStorage.getItem("signupAgreements");
+    if (!agreementData) {
+      toast.error("약관 동의가 필요합니다.");
+      navigate("/agreement", { replace: true });
+      return;
+    }
+
+    // SSO 회원가입인 경우 signupToken과 ssoData 처리
+    const ssoSignupToken = sessionStorage.getItem("ssoSignupToken");
+    const ssoSignupDataStr = sessionStorage.getItem("ssoSignupData");
+
+    if (ssoSignupToken && ssoSignupDataStr) {
+      try {
+        const ssoData = JSON.parse(ssoSignupDataStr);
+        const birthdate = ssoData.birthYear && ssoData.birthday ? `${ssoData.birthYear}-${ssoData.birthday}` : "";
+
+        setFormData((prev) => ({
+          ...prev,
+          email: ssoData.email || "",
+          name: ssoData.name || "",
+          gender: ssoData.gender || "M",
+          phoneNumber: ssoData.phoneNumber?.replace("+82 ", "0") || "",
+          birthday: birthdate,
+        }));
+        setIsSsoSignup(true);
+        setSignupToken(ssoSignupToken);
+      } catch (error) {
+        console.error("SSO 데이터 파싱 오류:", error);
+        toast.error("회원가입 정보를 불러오는데 실패했습니다.");
+        navigate("/agreement", { replace: true });
+      }
+    }
+    // 일반 회원가입은 기존 로직 유지 (location.state는 하위 호환성을 위해 유지)
+    else if (location.state?.ssoData) {
       const { ssoData, signupToken } = location.state;
       const birthdate = ssoData.birthYear && ssoData.birthday ? `${ssoData.birthYear}-${ssoData.birthday}` : "";
 
@@ -48,7 +83,7 @@ const SignupPage: React.FC = () => {
       setIsSsoSignup(true);
       setSignupToken(signupToken);
     }
-  }, [location.state]);
+  }, [location.state, navigate]);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -225,13 +260,31 @@ const SignupPage: React.FC = () => {
     }
 
     try {
+      // sessionStorage에서 동의 정보 가져오기
+      const agreementDataStr = sessionStorage.getItem("signupAgreements");
+      if (!agreementDataStr) {
+        toast.error("약관 동의 정보가 없습니다.");
+        navigate("/agreement", { replace: true });
+        return;
+      }
+
+      const agreementData = JSON.parse(agreementDataStr);
+      // userId 필드는 제거 (백엔드에서 처리)
+      const { userId, ...agreements } = agreementData;
+
       const payload = {
         ...formData,
+        agreements, // 동의 정보 포함
         ...(isSsoSignup && { signupToken }),
         ...(formData.role === ROLES.SELLER && { storeId: selectedStore?.id }),
       };
 
       await api.post("/user/signup", payload);
+
+      // 회원가입 성공 시 sessionStorage 정리
+      sessionStorage.removeItem("signupAgreements");
+      sessionStorage.removeItem("ssoSignupToken");
+      sessionStorage.removeItem("ssoSignupData");
 
       toast.success("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
       navigate("/login");

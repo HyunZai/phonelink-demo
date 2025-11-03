@@ -61,13 +61,12 @@ const SsoCallbackPage: React.FC = () => {
               navigate("/");
             }
           } else if (result.type === "SIGNUP_REQUIRED") {
-            toast.info("추가 정보 입력이 필요합니다.");
-            navigate("/signup", {
-              state: {
-                ssoData: result.ssoData,
-                signupToken: result.signupToken,
-              },
-            });
+            // SSO 회원가입: 동의 페이지로 먼저 이동
+            // signupToken과 ssoData를 sessionStorage에 임시 저장
+            sessionStorage.setItem("ssoSignupToken", result.signupToken);
+            sessionStorage.setItem("ssoSignupData", JSON.stringify(result.ssoData));
+            toast.info("약관 동의 후 회원가입을 진행해주세요.");
+            navigate("/agreement");
           } else if (result.type === "EXISTING_ACCOUNT") {
             await Swal.fire({
               title: "이미 가입된 사용자입니다.",
