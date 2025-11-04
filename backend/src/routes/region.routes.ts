@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request } from "express";
 import { AppDataSource } from "../db";
 import { Region } from "../typeorm/regions.entity";
 import { SelectQueryBuilder } from "typeorm";

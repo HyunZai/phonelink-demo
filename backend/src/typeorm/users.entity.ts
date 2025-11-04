@@ -15,6 +15,7 @@ import { SocialAccount } from "./socialAccounts.entity";
 import { UserFavorites } from "./userFavorites.entity";
 import { PostLike } from "./postLikes.entity";
 import { CommentLike } from "./commentLikes.entity";
+import { UserAgreement } from "./userAgreements.entity";
 import { ROLES, Role, USER_STATUSES, UserStatus } from "../../../shared/constants";
 
 @Entity("users")
@@ -125,4 +126,8 @@ export class User {
   /** 사용자가 좋아요한 댓글 목록 */
   @OneToMany(() => CommentLike, (like) => like.user)
   commentLikes: CommentLike[];
+
+  /** 사용자 동의 정보 */
+  @OneToMany(() => UserAgreement, (agreement) => agreement.user)
+  agreements: UserAgreement[];
 }

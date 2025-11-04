@@ -19,7 +19,7 @@ import { User } from "../typeorm/users.entity";
 import { Seller } from "../typeorm/sellers.entity";
 import { UserFavorites } from "../typeorm/userFavorites.entity";
 import { AppDataSource } from "../db";
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { ROLES } from "../../../shared/constants";
 import { handleError } from "../utils/errorHandler";
 
