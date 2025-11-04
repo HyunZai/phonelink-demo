@@ -24,7 +24,10 @@ import { PhoneManufacturer } from "../typeorm/phoneManufacturers.entity";
 import { Carrier } from "../typeorm/carriers.entity";
 import { User } from "../typeorm/users.entity";
 import { UserSuspension } from "../typeorm/userSuspensions.entity";
+import { Report } from "../typeorm/reports.entity";
 import { IsNull } from "typeorm";
+import type { ReportListDto, ReportListResponse } from "../../../shared/report.types";
+import { REPORT_STATUSES } from "../../../shared/constants";
 
 const router = Router();
 
@@ -916,6 +919,98 @@ router.post("/regions-sync-db", async (req, res) => {
       success: false,
       message: "Error syncing region data",
       error: "Internal Server Error",
+    });
+  }
+});
+// #endregion
+
+// #region Report Management
+// 신고 목록 조회
+router.get("/reports", async (req, res) => {
+  try {
+    const { status, page = "1", limit = "10", sortBy = "createdAt", sortOrder = "DESC" } = req.query;
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    const reportRepo = AppDataSource.getRepository(Report);
+
+    // 총 개수 조회용 QueryBuilder (별도 쿼리)
+    const countQueryBuilder = reportRepo.createQueryBuilder("report").innerJoin("report.reporter", "reporter");
+
+    // 필터링
+    if (
+      status &&
+      Object.values(REPORT_STATUSES).includes(status as (typeof REPORT_STATUSES)[keyof typeof REPORT_STATUSES])
+    ) {
+      countQueryBuilder.andWhere("report.status = :status", { status });
+    }
+
+    // 총 개수 조회
+    const totalCount = await countQueryBuilder.getCount();
+
+    // 데이터 조회용 QueryBuilder (relations 사용)
+    const dataQueryBuilder = reportRepo
+      .createQueryBuilder("report")
+      .innerJoinAndSelect("report.reporter", "reporter")
+      .select([
+        "report.id",
+        "report.status",
+        "report.reportableType",
+        "report.reasonType",
+        "report.createdAt",
+        "reporter.nickname",
+      ]);
+
+    // 필터링 (데이터 조회용에도 동일하게 적용)
+    if (
+      status &&
+      Object.values(REPORT_STATUSES).includes(status as (typeof REPORT_STATUSES)[keyof typeof REPORT_STATUSES])
+    ) {
+      dataQueryBuilder.andWhere("report.status = :status", { status });
+    }
+
+    // 정렬
+    const validSortBy = sortBy === "createdAt" || sortBy === "handledAt" ? sortBy : "createdAt";
+    const validSortOrder = sortOrder === "ASC" || sortOrder === "DESC" ? sortOrder : "DESC";
+    dataQueryBuilder.orderBy(`report.${validSortBy}`, validSortOrder);
+
+    // 페이지네이션 (getMany()와 함께 사용하면 정상 작동)
+    dataQueryBuilder.skip(skip).take(limitNum);
+
+    // 엔티티 데이터 조회
+    const reports = await dataQueryBuilder.getMany();
+
+    // DTO 변환
+    const reportsWithDto: ReportListDto[] = reports.map((report) => ({
+      id: report.id,
+      status: report.status,
+      reportableType: report.reportableType,
+      reasonType: report.reasonType,
+      createdAt: report.createdAt,
+      reporterNickname: report.reporter?.nickname,
+    }));
+
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    const response: ReportListResponse = {
+      reports: reportsWithDto,
+      totalCount,
+      totalPages,
+      currentPage: pageNum,
+      hasNextPage: pageNum < totalPages,
+      hasPrevPage: pageNum > 1,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
+  } catch (error) {
+    handleError(error, req, res, {
+      message: "신고 목록 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_REPORTS_ERROR",
     });
   }
 });

@@ -5,10 +5,11 @@ import StoreDetailModal from "../components/admin/StoreDetailModal";
 import type { PendingStoreDto } from "../../../shared/types";
 import MasterDataManager from "../components/admin/MasterDataManager";
 import UserManagement from "../components/admin/UserManagement";
+import ReportManagement from "../components/admin/ReportManagement";
 
 const AdminPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    "store-approval" | "master-data-management" | "user-management" | "system-region"
+    "store-approval" | "master-data-management" | "user-management" | "report-management" | "system-region"
   >("store-approval");
 
   // 시스템 지역 설정 관련 상태
@@ -83,6 +84,17 @@ const AdminPage: React.FC = () => {
             >
               <span className="hidden sm:inline">회원 관리</span>
               <span className="sm:hidden">회원</span>
+            </button>
+            <button
+              className={`shrink-0 border-b-2 py-3 sm:py-4 px-1 sm:px-2 text-xs sm:text-sm md:text-base font-semibold transition-colors duration-200 focus:outline-none whitespace-nowrap ${
+                activeTab === "report-management"
+                  ? "border-primary-light dark:border-primary-dark text-primary-light dark:text-primary-dark"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500"
+              }`}
+              onClick={() => setActiveTab("report-management")}
+            >
+              <span className="hidden sm:inline">신고 관리</span>
+              <span className="sm:hidden">신고</span>
             </button>
             <button
               className={`shrink-0 border-b-2 py-3 sm:py-4 px-1 sm:px-2 text-xs sm:text-sm md:text-base font-semibold transition-colors duration-200 focus:outline-none whitespace-nowrap ${
@@ -192,6 +204,8 @@ const AdminPage: React.FC = () => {
         {activeTab === "master-data-management" && <MasterDataManager />}
 
         {activeTab === "user-management" && <UserManagement />}
+
+        {activeTab === "report-management" && <ReportManagement />}
 
         {activeTab === "system-region" && (
           <div className="space-y-6">

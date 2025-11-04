@@ -125,6 +125,10 @@ apiClient.interceptors.response.use(
           window.location.href = "/login";
         }
         break;
+      case 400:
+        // 400 Bad Request는 컴포넌트에서 처리하도록 토스트를 표시하지 않음
+        // (각 컴포넌트에서 명시적으로 에러 메시지를 표시할 수 있도록)
+        break;
       case 403:
         toast.error("접근 권한이 없습니다.");
         break;

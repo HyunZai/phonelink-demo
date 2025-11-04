@@ -3,12 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaEye, FaHeart, FaComment, FaShare, FaUserAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import PostComment from "../components/PostComment";
+import ReportModal from "../components/ReportModal";
 import type { PostDetailDto } from "../../../shared/types";
 import { api } from "../api/axios";
 import { useAuthStore } from "../store/authStore";
+import { useReportStore } from "../store/reportStore";
 import { useTheme } from "../hooks/useTheme";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
+import { REPORTABLE_TYPES } from "../../../shared/constants";
 
 const PostPage: React.FC = () => {
   const { category = "", id: postId } = useParams<{ category: string; id: string }>();
@@ -20,8 +23,15 @@ const PostPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isNotFound, setIsNotFound] = useState(false);
   const { user } = useAuthStore();
+  const { openModal, isModalOpen, reportableType, reportableId, closeModal, submitReport, setNavigate } =
+    useReportStore();
   const { theme } = useTheme();
   const effectRan = useRef(false);
+
+  // 네비게이션 함수 등록
+  useEffect(() => {
+    setNavigate(navigate);
+  }, [navigate, setNavigate]);
 
   // 다크모드에서 content의 색상을 동적으로 처리하는 함수
   const processContentForTheme = (content: string) => {
@@ -205,21 +215,10 @@ const PostPage: React.FC = () => {
     }
   };
 
-  const handleReport = async () => {
+  // 신고 모달 열기
+  const handleReportClick = () => {
     if (!post) return;
-    if (!user?.id) {
-      toast.error("로그인이 필요합니다.");
-      navigate("/login");
-      return;
-    }
-    try {
-      //await api.post(`/post/report/${post.id}`);
-      toast.success("신고가 접수되었습니다.");
-    } catch (error) {
-      console.error("신고 오류:", error);
-      toast.error("신고에 실패했습니다.");
-    }
-    toast.success("신고가 접수되었습니다.");
+    openModal(REPORTABLE_TYPES.POST, post.id, () => !!user?.id);
   };
 
   // 작성자인지 확인
@@ -310,7 +309,7 @@ const PostPage: React.FC = () => {
               </div>
             ) : (
               <button
-                onClick={handleReport}
+                onClick={handleReportClick}
                 className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors"
               >
                 신고하기
@@ -346,7 +345,10 @@ const PostPage: React.FC = () => {
                 </button>
               </>
             ) : (
-              <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors">
+              <button
+                onClick={handleReportClick}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline transition-colors"
+              >
                 신고하기
               </button>
             )}
@@ -447,6 +449,17 @@ const PostPage: React.FC = () => {
 
       {/* 댓글 섹션 */}
       <PostComment post={{ ...post, authorId: post.authorId }} setPost={setPost} />
+
+      {/* 신고 모달 */}
+      {isModalOpen && reportableType && reportableId && (
+        <ReportModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          reportableType={reportableType}
+          reportableId={reportableId}
+          onReport={submitReport}
+        />
+      )}
     </div>
   );
 };
