@@ -40,18 +40,9 @@ export type ReportProcessData = Pick<
 // 신고 목록 조회용 DTO
 export type ReportListDto = Pick<
   ReportDto,
-  | "id"
-  | "reportableType"
-  | "reportableId"
-  | "reasonType"
-  | "reasonDetail"
-  | "status"
-  | "createdAt"
-  | "handledAt"
+  "id" | "reportableType" | "reasonType" | "status" | "createdAt"
 > & {
-  reporter?: Pick<UserDto, "id" | "nickname" | "profileImageUrl">;
-  admin?: Pick<UserDto, "id" | "nickname">;
-  reportableTitle?: string; // 신고 대상의 제목 (게시글 제목, 사용자 닉네임 등)
+  reporterNickname?: UserDto["nickname"]; // 신고자 닉네임
 };
 
 // 신고 상세 조회용 DTO

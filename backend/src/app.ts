@@ -3,6 +3,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import session from "express-session";
+import { requestLoggingMiddleware, errorLoggingMiddleware } from "./middlewares/logging.middleware";
+
 import offerRoutes from "./routes/offer.routes";
 import priceInputRoutes from "./routes/priceInput.route";
 import userRoutes from "./routes/user.route";
@@ -15,8 +18,7 @@ import uploadRoutes from "./routes/upload.routes";
 import postRoutes from "./routes/post.routes";
 import utilRoutes from "./routes/util.routes";
 import logsRoutes from "./routes/logs.routes";
-import session from "express-session";
-import { requestLoggingMiddleware, errorLoggingMiddleware } from "./middlewares/logging.middleware";
+import reportRoutes from "./routes/report.routes";
 
 dotenv.config();
 
@@ -67,6 +69,7 @@ app.use("/api/region", regionRoutes);
 app.use("/api/phone", phoneRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/post", postRoutes);
+app.use("/api/report", reportRoutes);
 app.use("/api/util", utilRoutes);
 app.use("/api/logs", logsRoutes);
 
