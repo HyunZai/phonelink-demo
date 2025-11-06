@@ -157,6 +157,32 @@ const ReportManagement: React.FC = () => {
     fetchReports(); // 목록 새로고침
   };
 
+  // 날짜 포맷팅 (KST 변환)
+  const formatDate = (date: string | undefined) => {
+    if (!date) return "-";
+
+    if (typeof date === "string" && date.includes("T")) {
+      // "2025-10-06T17:32:59.000Z" 형태의 문자열을 직접 파싱
+      const [datePart, timePart] = date.split("T");
+      const [year, month, day] = datePart.split("-");
+
+      // 시간 부분에서 초와 밀리초 제거
+      const timeOnly = timePart.split(".")[0]; // "17:32:59"
+      const [hours, minutes] = timeOnly.split(":");
+
+      return `${year}. ${month}. ${day}. ${hours}:${minutes}`;
+    } else {
+      // Date 객체인 경우 기존 로직 유지
+      const dateObj = new Date(date);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      const hours = String(dateObj.getHours()).padStart(2, "0");
+      const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+      return `${year}. ${month}. ${day}. ${hours}:${minutes}`;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 헤더 섹션 */}
@@ -306,13 +332,7 @@ const ReportManagement: React.FC = () => {
                       </td>
                       {/* 신고일 - md 이상에서 표시 */}
                       <td className="hidden md:table-cell px-2 sm:px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {new Date(report.createdAt).toLocaleDateString("ko-KR", {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDate(report.createdAt?.toString())}
                       </td>
                       {/* 신고자 - lg 이상에서만 표시 */}
                       <td className="hidden lg:table-cell px-2 sm:px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
