@@ -223,6 +223,7 @@ router.get("/recent-posts", async (req, res) => {
               categories c ON pc.category_id = c.id
           WHERE
               c.description LIKE '%게시판'
+              AND p.is_deleted = false
       )
       SELECT
           postId,
