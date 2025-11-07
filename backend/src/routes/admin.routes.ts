@@ -16,6 +16,9 @@ import {
   CarrierDto,
   PhoneStorageDto,
   UserSimpleDto,
+  ReportDetailDto,
+  ReportListDto,
+  ReportListResponse,
 } from "../../../shared/types";
 import { UserDetailDto } from "../../../shared/user.types";
 import { PhoneStorage } from "../typeorm/phoneStorage.entity";
@@ -26,7 +29,6 @@ import { User } from "../typeorm/users.entity";
 import { UserSuspension } from "../typeorm/userSuspensions.entity";
 import { Report } from "../typeorm/reports.entity";
 import { IsNull } from "typeorm";
-import type { ReportListDto, ReportListResponse } from "../../../shared/report.types";
 import { REPORT_STATUSES } from "../../../shared/constants";
 
 const router = Router();
@@ -1011,6 +1013,117 @@ router.get("/reports", async (req, res) => {
     handleError(error, req, res, {
       message: "신고 목록 조회 중 오류가 발생했습니다.",
       errorCode: "FETCH_REPORTS_ERROR",
+    });
+  }
+});
+
+router.get("/reports/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reportId = parseInt(id, 10);
+
+    if (isNaN(reportId) || reportId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "유효하지 않은 신고 ID입니다.",
+      });
+    }
+
+    // 신고 타입별로 통합된 쿼리
+    const query = `
+      SELECT
+        r.id as id,
+        u.nickname as reporterNickname,
+        u.profile_image_url as reporterImageUrl,
+        r.status as status,
+        r.reportable_type as reportableType,
+        r.reason_type as reasonType,
+        r.reason_detail as reasonDetail,
+        r.admin_id as adminId,
+        r.action_taken as actionTaken,
+        r.handled_at as handledAt,
+        r.created_at as createdAt,
+        -- 공통 링크 및 작성자 정보 (타입별 조건부)
+        CASE
+          WHEN r.reportable_type = 'POST' THEN CONCAT('/', COALESCE(c_post.name, ''), '/', r.reportable_id)
+          WHEN r.reportable_type = 'COMMENT' THEN CONCAT('/', COALESCE(c_comment.name, ''), '/', COALESCE(c2.post_id, ''))
+          WHEN r.reportable_type = 'STORE' THEN CONCAT('/store/', r.reportable_id)
+          ELSE NULL
+        END as link,
+        CASE
+          WHEN r.reportable_type = 'POST' THEN u_post.nickname
+          WHEN r.reportable_type = 'COMMENT' THEN u_comment.nickname
+          ELSE NULL
+        END as authorNickname,
+        -- 타입별 내용
+        CASE
+          WHEN r.reportable_type = 'POST' THEN p.content
+          WHEN r.reportable_type = 'COMMENT' THEN c2.content
+          ELSE NULL
+        END as content,
+        -- 게시글 전용 제목
+        CASE
+          WHEN r.reportable_type = 'POST' THEN p.title
+          ELSE NULL
+        END as postTitle
+      FROM reports r
+      LEFT JOIN users u ON r.reporter_user_id = u.id
+      -- 게시글 관련 조인
+      LEFT JOIN posts p ON r.reportable_type = 'POST' AND r.reportable_id = p.id
+      LEFT JOIN users u_post ON r.reportable_type = 'POST' AND p.user_id = u_post.id
+      LEFT JOIN post_categories pc_post ON r.reportable_type = 'POST' AND pc_post.post_id = p.id
+      LEFT JOIN categories c_post ON pc_post.category_id = c_post.id
+      -- 댓글 관련 조인
+      LEFT JOIN comments c2 ON r.reportable_type = 'COMMENT' AND r.reportable_id = c2.id
+      LEFT JOIN users u_comment ON r.reportable_type = 'COMMENT' AND c2.user_id = u_comment.id
+      LEFT JOIN post_categories pc_comment ON r.reportable_type = 'COMMENT' AND pc_comment.post_id = c2.post_id
+      LEFT JOIN categories c_comment ON pc_comment.category_id = c_comment.id
+      -- 매장 관련 조인
+      LEFT JOIN stores s ON r.reportable_type = 'STORE' AND r.reportable_id = s.id
+      WHERE r.id = ?
+    `;
+
+    const result = await AppDataSource.query(query, [reportId]);
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "해당 신고를 찾을 수 없습니다.",
+      });
+    }
+
+    const reportData = result[0];
+
+    // DTO 형식으로 변환
+    const reportDetail: ReportDetailDto = {
+      id: reportData.id,
+      status: reportData.status,
+      createdAt: reportData.createdAt,
+      reasonType: reportData.reasonType || undefined,
+      reportableType: reportData.reportableType,
+      reasonDetail: reportData.reasonDetail || undefined,
+      adminId: reportData.adminId || undefined,
+      handledAt: reportData.handledAt || undefined,
+      actionTaken: reportData.actionTaken || undefined,
+      reporterNickname: reportData.reporterNickname || undefined,
+      reporterImageUrl: reportData.reporterImageUrl || undefined,
+      link: reportData.link || undefined,
+      authorNickname: reportData.authorNickname || undefined,
+      content: reportData.content || undefined,
+      postTitle: reportData.postTitle || undefined,
+    };
+
+    console.log(reportDetail);
+
+    res.status(200).json({
+      success: true,
+      data: reportDetail,
+    });
+  } catch (error) {
+    handleError(error, req, res, {
+      message: "신고 상세 조회 중 오류가 발생했습니다.",
+      errorCode: "FETCH_REPORT_ERROR",
+      additionalContext: { reportId: req.params.id },
     });
   }
 });

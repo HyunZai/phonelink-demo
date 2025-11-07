@@ -46,11 +46,26 @@ export type ReportListDto = Pick<
 };
 
 // 신고 상세 조회용 DTO
-export type ReportDetailDto = ReportDto & {
-  reporter?: Pick<UserDto, "id" | "nickname" | "profileImageUrl" | "email">;
-  admin?: Pick<UserDto, "id" | "nickname" | "email">;
-  reportableTitle?: string;
-  reportableContent?: string; // 신고 대상의 내용 (게시글 내용, 댓글 내용 등)
+export type ReportDetailDto = {
+  id: ReportDto["id"];
+  status: ReportDto["status"];
+  createdAt: ReportDto["createdAt"];
+  reportableType: ReportDto["reportableType"];
+  reasonType?: ReportDto["reasonType"];
+  reasonDetail?: ReportDto["reasonDetail"];
+  adminId?: UserDto["id"];
+  handledAt?: ReportDto["handledAt"];
+  actionTaken?: ReportDto["actionTaken"];
+  // 신고자 정보
+  reporterNickname?: UserDto["nickname"];
+  reporterImageUrl?: UserDto["profileImageUrl"];
+  // 처리 정보
+  // 공통: 신고 대상 링크 (타입에 따라 형식이 다름)
+  link?: string;
+  authorNickname?: UserDto["nickname"];
+  content?: string;
+  // 게시글 신고 전용
+  postTitle?: string;
 };
 
 // =================================================================
