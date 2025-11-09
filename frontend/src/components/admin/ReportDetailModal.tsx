@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiAlertTriangle, FiClock, FiUser, FiFileText, FiX } from "react-icons/fi";
+import { FiAlertTriangle, FiClock, FiUser, FiFileText, FiX, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import type { ReportDetailDto } from "../../../../shared/report.types";
 import { REPORT_STATUSES, REPORTABLE_TYPES, REASON_TYPES, type ReportStatus } from "../../../../shared/constants";
@@ -24,6 +24,8 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
   const [showProcessForm, setShowProcessForm] = useState(false);
   const [processStatus, setProcessStatus] = useState<ReportStatus>(REPORT_STATUSES.RESOLVED);
   const [actionTaken, setActionTaken] = useState("");
+  // 신고 대상 내용 토글 상태
+  const [showReportableContent, setShowReportableContent] = useState(false);
 
   // 신고 상세 정보 API 호출 함수
   const fetchReportDetail = async (reportId: number) => {
@@ -31,10 +33,10 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
     setError(null);
 
     try {
-      const response = await api.get<{ success: boolean; data: ReportDetailDto }>(`/admin/reports/${reportId}`);
+      const response = await api.get<ReportDetailDto>(`/admin/reports/${reportId}`);
 
-      if (response && response.data) {
-        setReportDetail(response.data);
+      if (response) {
+        setReportDetail(response);
       } else {
         setError("신고 정보를 불러오는데 실패했습니다.");
       }
@@ -109,6 +111,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
       setShowProcessForm(false);
       setProcessStatus(REPORT_STATUSES.RESOLVED);
       setActionTaken("");
+      setShowReportableContent(false);
     }
   }, [isOpen, reportId]);
 
@@ -178,7 +181,9 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
   };
 
   // 신고 사유 한글 변환
-  const getReasonTypeText = (reason: string) => {
+  const getReasonTypeText = (reason: string | undefined) => {
+    if (!reason) return "-";
+
     switch (reason) {
       case REASON_TYPES.SPAM:
         return "스팸 또는 광고";
@@ -199,7 +204,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  // 신고 대상 링크 생성
+  // 신고 대상 링크 생성 (서버에서 제공하는 link가 없을 때 fallback)
   const getReportableLink = (type: string, id: number) => {
     switch (type) {
       case REPORTABLE_TYPES.POST:
@@ -270,87 +275,86 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
             {/* 신고 정보 표시 (로딩 중이 아니고 에러가 없을 때만) */}
             {!loading && !error && reportDetail && (
               <>
-                {/* 신고 기본 정보 */}
-                <div className="p-3 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">신고 정보</h3>
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(reportDetail.status)}`}
-                    >
-                      {getStatusText(reportDetail.status)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 ID</p>
-                      <p className="text-gray-900 dark:text-white font-medium">#{reportDetail.id}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 대상</p>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                          {getReportableTypeText(reportDetail.reportableType)}
-                        </span>
-                        {reportDetail.reportableTitle && (
-                          <Link
-                            to={getReportableLink(reportDetail.reportableType, reportDetail.reportableId)}
-                            className="text-gray-900 dark:text-white hover:text-primary-light dark:hover:text-primary-dark hover:underline truncate"
-                          >
-                            {reportDetail.reportableTitle}
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 사유</p>
-                      <p className="text-gray-900 dark:text-white">{getReasonTypeText(reportDetail.reasonType)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고일</p>
-                      <p className="text-gray-900 dark:text-white">{formatDate(reportDetail.createdAt)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 신고자 정보 */}
-                {reportDetail.reporter && (
-                  <div className="p-3 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
+                {/* 신고자 정보 - 최상단 */}
+                {reportDetail.reporterNickname && (
+                  <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
                     <div className="flex items-center gap-2 mb-3">
-                      <FiUser className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">신고자 정보</h3>
+                      <FiUser className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">신고자 정보</h3>
                     </div>
                     <div className="flex items-center gap-3">
-                      {reportDetail.reporter.profileImageUrl ? (
+                      {reportDetail.reporterImageUrl ? (
                         <img
-                          src={`${import.meta.env.VITE_API_URL}${reportDetail.reporter.profileImageUrl}`}
-                          alt={reportDetail.reporter.nickname || "신고자"}
-                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                          src={`${import.meta.env.VITE_API_URL}${reportDetail.reporterImageUrl}`}
+                          alt={reportDetail.reporterNickname || "신고자"}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
-                          <FiUser className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
+                          <FiUser className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {reportDetail.reporter.nickname || "알 수 없음"}
+                        <p className="text-base font-medium text-gray-900 dark:text-white truncate">
+                          {reportDetail.reporterNickname || "알 수 없음"}
                         </p>
-                        {reportDetail.reporter.email && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {reportDetail.reporter.email}
-                          </p>
-                        )}
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* 신고 정보 - 신고 상태, 신고 대상, 신고 사유, 신고일 */}
+                <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">신고 정보</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 상태</p>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(reportDetail.status)}`}
+                      >
+                        {getStatusText(reportDetail.status)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고일</p>
+                      <p className="text-gray-900 dark:text-white">{formatDate(reportDetail.createdAt)}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 대상</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                          {getReportableTypeText(reportDetail.reportableType)}
+                        </span>
+                        {(reportDetail.postTitle || reportDetail.link) && (
+                          <Link
+                            to={reportDetail.link || getReportableLink(reportDetail.reportableType, reportDetail.id)}
+                            className="text-gray-900 dark:text-white hover:text-primary-light dark:hover:text-primary-dark hover:underline truncate"
+                          >
+                            {reportDetail.postTitle ||
+                              (reportDetail.reportableType === REPORTABLE_TYPES.COMMENT
+                                ? "댓글 보기"
+                                : reportDetail.reportableType === REPORTABLE_TYPES.STORE
+                                  ? "매장 보기"
+                                  : "신고 대상 보기")}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 사유</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {reportDetail.reasonType ? getReasonTypeText(reportDetail.reasonType) : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* 신고 상세 내용 */}
                 {reportDetail.reasonDetail && (
-                  <div className="p-3 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
                     <div className="flex items-center gap-2 mb-2">
                       <FiFileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">신고 상세 내용</h3>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">신고 상세 내용</h3>
                     </div>
                     <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                       {reportDetail.reasonDetail}
@@ -358,21 +362,57 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
                   </div>
                 )}
 
-                {/* 신고 대상 내용 (게시글/댓글인 경우) */}
-                {reportDetail.reportableContent && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FiAlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                      <h3 className="text-sm font-semibold text-yellow-900 dark:text-yellow-200">신고 대상 내용</h3>
-                    </div>
-                    <p className="text-sm text-yellow-800 dark:text-yellow-300 whitespace-pre-wrap">
-                      {reportDetail.reportableContent}
-                    </p>
+                {/* 신고 대상 내용 - 토글 버튼 */}
+                {(reportDetail.content || reportDetail.postTitle) && (
+                  <div className="bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
+                    <button
+                      onClick={() => setShowReportableContent(!showReportableContent)}
+                      className="w-full p-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FiAlertTriangle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                          신고 대상 내용{" "}
+                          {reportDetail.reportableType === REPORTABLE_TYPES.POST
+                            ? "(게시글)"
+                            : reportDetail.reportableType === REPORTABLE_TYPES.COMMENT
+                              ? "(댓글)"
+                              : ""}
+                        </h3>
+                      </div>
+                      {showReportableContent ? (
+                        <FiChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      ) : (
+                        <FiChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      )}
+                    </button>
+                    {showReportableContent && (
+                      <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-600 pt-4">
+                        {reportDetail.authorNickname && (
+                          <div className="mb-2">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">작성자: </span>
+                            <span className="text-xs text-gray-700 dark:text-gray-300">
+                              {reportDetail.authorNickname}
+                            </span>
+                          </div>
+                        )}
+                        {reportDetail.postTitle && (
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                            {reportDetail.postTitle}
+                          </p>
+                        )}
+                        {reportDetail.content && (
+                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                            {reportDetail.content}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* 처리 정보 (처리된 경우) */}
-                {reportDetail.status !== REPORT_STATUSES.PENDING && reportDetail.admin && (
+                {reportDetail.status !== REPORT_STATUSES.PENDING && reportDetail.adminId && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-700">
                     <div className="flex items-center gap-2 mb-3">
                       <FiClock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -381,7 +421,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
                     <div className="space-y-2 text-sm">
                       <div>
                         <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">처리 관리자</p>
-                        <p className="text-blue-900 dark:text-blue-100">{reportDetail.admin.nickname}</p>
+                        <p className="text-blue-900 dark:text-blue-100">{reportDetail.adminId}</p>
                       </div>
                       {reportDetail.handledAt && (
                         <div>
