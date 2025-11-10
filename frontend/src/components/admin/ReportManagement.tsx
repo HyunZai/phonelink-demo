@@ -23,9 +23,8 @@ const ReportManagement: React.FC = () => {
   const statusFilterOptions = [
     { value: "ALL" as ReportStatus | "ALL", label: "전체 상태" },
     { value: REPORT_STATUSES.PENDING, label: "대기" },
-    { value: REPORT_STATUSES.PROCESSING, label: "처리중" },
     { value: REPORT_STATUSES.RESOLVED, label: "처리완료" },
-    { value: REPORT_STATUSES.DISMISSED, label: "기각" },
+    { value: REPORT_STATUSES.DISMISSED, label: "반려됨" },
   ];
 
   // 신고 목록 조회
@@ -68,7 +67,7 @@ const ReportManagement: React.FC = () => {
       case REPORT_STATUSES.RESOLVED:
         return "처리완료";
       case REPORT_STATUSES.DISMISSED:
-        return "기각";
+        return "반려";
       default:
         return status;
     }

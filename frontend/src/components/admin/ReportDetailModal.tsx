@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiAlertTriangle, FiUser, FiFileText, FiX, FiChevronDown, FiChevronUp, FiExternalLink } from "react-icons/fi";
-import { Listbox, Transition } from "@headlessui/react";
+import {
+  FiAlertTriangle,
+  FiUser,
+  FiFileText,
+  FiX,
+  FiChevronDown,
+  FiChevronUp,
+  FiExternalLink,
+  FiCheckCircle,
+} from "react-icons/fi";
 import { Link } from "react-router-dom";
 import type { ReportDetailDto } from "../../../../shared/report.types";
 import { REPORT_STATUSES, REPORTABLE_TYPES, REASON_TYPES, type ReportStatus } from "../../../../shared/constants";
@@ -23,7 +31,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
   const [processing, setProcessing] = useState(false);
 
   // 처리 관련 상태
-  const [processStatus, setProcessStatus] = useState<ReportStatus>(REPORT_STATUSES.RESOLVED);
+  const [processStatus, setProcessStatus] = useState<ReportStatus | null>(null);
   const [actionTaken, setActionTaken] = useState("");
   // 신고 대상 내용 토글 상태
   const [showReportableContent, setShowReportableContent] = useState(false);
@@ -55,12 +63,10 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
 
       if (response) {
         setReportDetail(response);
-        if (response.status === REPORT_STATUSES.RESOLVED) {
-          setProcessStatus(REPORT_STATUSES.RESOLVED);
-        } else if (response.status === REPORT_STATUSES.DISMISSED) {
-          setProcessStatus(REPORT_STATUSES.DISMISSED);
+        if (response.status === REPORT_STATUSES.PENDING) {
+          setProcessStatus(null);
         } else {
-          setProcessStatus(REPORT_STATUSES.RESOLVED);
+          setProcessStatus(response.status);
         }
       } else {
         setError("신고 정보를 불러오는데 실패했습니다.");
@@ -85,12 +91,12 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
     if (!reportId) return;
 
     if (!processStatus) {
-      setError("처리 상태를 선택해주세요.");
+      toast.error("처리 상태를 선택해주세요.");
       return;
     }
 
     if (processStatus === REPORT_STATUSES.RESOLVED && !actionTaken.trim()) {
-      setError("처리 내용을 입력해주세요.");
+      toast.error("처리 내용을 입력해주세요.");
       return;
     }
 
@@ -100,7 +106,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
     try {
       await api.post(`/admin/reports/${reportId}/process`, {
         status: processStatus,
-        actionTaken: actionTaken.trim() || undefined,
+        actionTaken: actionTaken.trim() || null,
       });
 
       toast.success("신고가 처리되었습니다.");
@@ -132,7 +138,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
       // 모달이 닫히면 상태 초기화
       setReportDetail(null);
       setError(null);
-      setProcessStatus(REPORT_STATUSES.RESOLVED);
+      setProcessStatus(null);
       setActionTaken("");
       setShowReportableContent(false);
     }
@@ -187,6 +193,11 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  const statusOptions: { value: ReportStatus; label: string }[] = [
+    { value: REPORT_STATUSES.RESOLVED, label: "수용" },
+    { value: REPORT_STATUSES.DISMISSED, label: "반려" },
+  ];
+
   // 신고 대상 타입 한글 변환
   const getReportableTypeText = (type: string) => {
     switch (type) {
@@ -226,6 +237,13 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
         return reason;
     }
   };
+
+  const actionPlaceholder =
+    processStatus === REPORT_STATUSES.RESOLVED
+      ? "수용 사유 또는 후속 조치를 입력해주세요..."
+      : processStatus === REPORT_STATUSES.DISMISSED
+        ? "반려 사유를 입력해주세요... (선택사항)"
+        : "처리 결과를 입력해주세요...";
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -421,52 +439,37 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
                     <div className="space-y-4 text-sm text-gray-900 dark:text-white">
                       {reportDetail.status === REPORT_STATUSES.PENDING ? (
                         <div className="space-y-4">
-                          <div className="space-y-1">
-                            <label className="block text-xs text-gray-600 dark:text-gray-400">처리 상태 *</label>
-                            <Listbox value={processStatus} onChange={setProcessStatus}>
-                              <div className="relative">
-                                <Listbox.Button className="relative w-full cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#292929] py-2 pl-3 pr-10 text-left text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500">
-                                  <span className="block truncate">
-                                    {processStatus === REPORT_STATUSES.RESOLVED ? "처리완료" : "기각"}
-                                  </span>
-                                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
-                                    <FiChevronDown className="h-4 w-4" aria-hidden="true" />
-                                  </span>
-                                </Listbox.Button>
-                                <Transition
-                                  leave="transition ease-in duration-100"
-                                  leaveFrom="opacity-100"
-                                  leaveTo="opacity-0"
-                                >
-                                  <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] py-1 text-sm shadow-lg focus:outline-none">
-                                    <Listbox.Option
-                                      className={({ active }) =>
-                                        `relative cursor-pointer select-none px-4 py-2 text-sm ${
-                                          active
-                                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                            : "text-gray-900 dark:text-gray-100"
-                                        }`
-                                      }
-                                      value={REPORT_STATUSES.RESOLVED}
-                                    >
-                                      처리완료
-                                    </Listbox.Option>
-                                    <Listbox.Option
-                                      className={({ active }) =>
-                                        `relative cursor-pointer select-none px-4 py-2 text-sm ${
-                                          active
-                                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                            : "text-gray-900 dark:text-gray-100"
-                                        }`
-                                      }
-                                      value={REPORT_STATUSES.DISMISSED}
-                                    >
-                                      기각
-                                    </Listbox.Option>
-                                  </Listbox.Options>
-                                </Transition>
-                              </div>
-                            </Listbox>
+                          <div>
+                            <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">처리 상태 *</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              {statusOptions.map((option) => {
+                                const isSelected = processStatus === option.value;
+                                const isResolved = option.value === REPORT_STATUSES.RESOLVED;
+                                const activeClasses = isResolved
+                                  ? "border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-900/30 dark:text-blue-300"
+                                  : "border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-500 dark:bg-amber-900/30 dark:text-amber-300";
+                                const inactiveClasses = isResolved
+                                  ? "border-gray-300 text-gray-600 hover:border-blue-300 hover:text-blue-500 dark:border-gray-600 dark:text-gray-300 dark:hover:border-blue-400 dark:hover:text-blue-300"
+                                  : "border-gray-300 text-gray-600 hover:border-amber-300 hover:text-amber-500 dark:border-gray-600 dark:text-gray-300 dark:hover:border-amber-400 dark:hover:text-amber-300";
+                                const iconColor = isResolved
+                                  ? "text-blue-500 dark:text-blue-300"
+                                  : "text-amber-500 dark:text-amber-300";
+                                return (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => setProcessStatus(option.value)}
+                                    aria-pressed={isSelected}
+                                    className={`flex items-center justify-center gap-3 rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent ${
+                                      isSelected ? activeClasses : inactiveClasses
+                                    }`}
+                                  >
+                                    {isSelected && <FiCheckCircle className={`h-4 w-4 ${iconColor}`} />}
+                                    <span>{option.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
 
                           <div>
@@ -476,11 +479,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
                             <textarea
                               value={actionTaken}
                               onChange={(e) => setActionTaken(e.target.value)}
-                              placeholder={
-                                processStatus === REPORT_STATUSES.RESOLVED
-                                  ? "처리 결과를 입력해주세요..."
-                                  : "기각 사유를 입력해주세요... (선택사항)"
-                              }
+                              placeholder={actionPlaceholder}
                               rows={4}
                               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#292929] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                             />
@@ -488,9 +487,15 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
 
                           <button
                             onClick={handleProcessReport}
-                            disabled={processing || (processStatus === REPORT_STATUSES.RESOLVED && !actionTaken.trim())}
+                            disabled={
+                              processing ||
+                              !processStatus ||
+                              (processStatus === REPORT_STATUSES.RESOLVED && !actionTaken.trim())
+                            }
                             className={`w-full px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors ${
-                              processing || (processStatus === REPORT_STATUSES.RESOLVED && !actionTaken.trim())
+                              processing ||
+                              !processStatus ||
+                              (processStatus === REPORT_STATUSES.RESOLVED && !actionTaken.trim())
                                 ? "bg-red-400 cursor-not-allowed"
                                 : "bg-red-500 hover:bg-red-600"
                             }`}
