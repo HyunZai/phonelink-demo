@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaEye, FaHeart, FaComment, FaPen, FaFire, FaTrophy, FaImage } from "react-icons/fa";
-import { HiDotsHorizontal } from "react-icons/hi";
 import type { PostListDto } from "../../../shared/types";
 import { api } from "../api/axios";
+import Pagination from "../components/Pagination";
 
 const TipsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -129,19 +129,6 @@ const TipsPage: React.FC = () => {
     setCurrentPage(page);
     // 페이지 상단으로 스크롤
     // window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // 페이지네이션 버튼 생성
-  const generatePageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
   };
 
   return (
@@ -452,94 +439,9 @@ const TipsPage: React.FC = () => {
         )}
       </div>
 
-      {/* 페이지네이션 */}
       {!isLoading && totalPages > 1 && (
-        <div className="flex items-center justify-center mt-4 px-2">
-          <div className="flex items-center space-x-1 bg-white dark:bg-[#292929] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-500 p-1 sm:p-2 max-w-full overflow-x-auto">
-            {/* 이전 페이지 버튼 */}
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="group flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 hover:text-primary-light dark:hover:text-primary-dark disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 dark:disabled:hover:text-gray-400 transition-all duration-200"
-            >
-              <svg
-                className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-0.5 transition-transform duration-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-
-            {/* 첫 페이지 */}
-            {currentPage > 3 && !generatePageNumbers().includes(1) && (
-              <>
-                <button
-                  onClick={() => handlePageChange(1)}
-                  className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 hover:text-primary-light dark:hover:text-primary-dark transition-all duration-200 font-medium text-sm sm:text-base"
-                >
-                  1
-                </button>
-                {currentPage > 4 && (
-                  <span className="flex items-center justify-center w-6 h-8 sm:h-10 text-gray-400 dark:text-gray-500">
-                    <HiDotsHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </span>
-                )}
-              </>
-            )}
-
-            {/* 페이지 번호들 */}
-            {generatePageNumbers().map((page) => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base ${
-                  currentPage === page
-                    ? "bg-gradient-to-r from-primary-light to-primary-light/80 dark:from-primary-dark dark:to-primary-dark/80 text-white dark:text-background-dark shadow-lg scale-105"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 hover:text-primary-light dark:hover:text-primary-dark hover:scale-105"
-                }`}
-              >
-                {page}
-                {currentPage === page && (
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white dark:bg-background-dark rounded-full"></div>
-                )}
-              </button>
-            ))}
-
-            {/* 마지막 페이지 */}
-            {currentPage < totalPages - 2 && !generatePageNumbers().includes(totalPages) && (
-              <>
-                {currentPage < totalPages - 3 && (
-                  <span className="flex items-center justify-center w-6 h-8 sm:h-10 text-gray-400 dark:text-gray-500">
-                    <HiDotsHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </span>
-                )}
-                <button
-                  onClick={() => handlePageChange(totalPages)}
-                  className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 hover:text-primary-light dark:hover:text-primary-dark transition-all duration-200 font-medium text-sm sm:text-base"
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
-
-            {/* 다음 페이지 버튼 */}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="group flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 hover:text-primary-light dark:hover:text-primary-dark disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 dark:disabled:hover:text-gray-400 transition-all duration-200"
-            >
-              <svg
-                className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-0.5 transition-transform duration-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+        <div className="mt-4">
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}
     </div>
