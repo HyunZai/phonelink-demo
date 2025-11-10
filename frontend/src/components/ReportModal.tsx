@@ -101,7 +101,10 @@ const ReportModal: React.FC<ReportModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* 배경 오버레이 */}
-      <div className="absolute inset-0 bg-black bg-opacity-50 dark:bg-opacity-70" onClick={handleClose} />
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm"
+        onClick={handleClose}
+      />
 
       {/* 모달 컨텐츠 */}
       <div className="relative bg-white dark:bg-[#292929] rounded-lg shadow-xl max-w-lg md:max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">

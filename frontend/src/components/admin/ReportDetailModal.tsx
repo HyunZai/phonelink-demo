@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { FiAlertTriangle, FiClock, FiUser, FiFileText, FiX, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { createPortal } from "react-dom";
+import { FiAlertTriangle, FiUser, FiFileText, FiX, FiChevronDown, FiChevronUp, FiExternalLink } from "react-icons/fi";
+import { Listbox, Transition } from "@headlessui/react";
 import { Link } from "react-router-dom";
 import type { ReportDetailDto } from "../../../../shared/report.types";
 import { REPORT_STATUSES, REPORTABLE_TYPES, REASON_TYPES, type ReportStatus } from "../../../../shared/constants";
@@ -21,11 +23,27 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
   const [processing, setProcessing] = useState(false);
 
   // 처리 관련 상태
-  const [showProcessForm, setShowProcessForm] = useState(false);
   const [processStatus, setProcessStatus] = useState<ReportStatus>(REPORT_STATUSES.RESOLVED);
   const [actionTaken, setActionTaken] = useState("");
   // 신고 대상 내용 토글 상태
   const [showReportableContent, setShowReportableContent] = useState(false);
+
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener("keydown", handleEsc);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleEsc);
+    };
+  }, [isOpen, onClose]);
 
   // 신고 상세 정보 API 호출 함수
   const fetchReportDetail = async (reportId: number) => {
@@ -37,6 +55,13 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
 
       if (response) {
         setReportDetail(response);
+        if (response.status === REPORT_STATUSES.RESOLVED) {
+          setProcessStatus(REPORT_STATUSES.RESOLVED);
+        } else if (response.status === REPORT_STATUSES.DISMISSED) {
+          setProcessStatus(REPORT_STATUSES.DISMISSED);
+        } else {
+          setProcessStatus(REPORT_STATUSES.RESOLVED);
+        }
       } else {
         setError("신고 정보를 불러오는데 실패했습니다.");
       }
@@ -88,7 +113,6 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
         onReportStatusUpdate();
       }
 
-      setShowProcessForm(false);
       setActionTaken("");
     } catch (err: any) {
       console.error("신고 처리 오류:", err);
@@ -108,7 +132,6 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
       // 모달이 닫히면 상태 초기화
       setReportDetail(null);
       setError(null);
-      setShowProcessForm(false);
       setProcessStatus(REPORT_STATUSES.RESOLVED);
       setActionTaken("");
       setShowReportableContent(false);
@@ -204,275 +227,246 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  // 신고 대상 링크 생성 (서버에서 제공하는 link가 없을 때 fallback)
-  const getReportableLink = (type: string, id: number) => {
-    switch (type) {
-      case REPORTABLE_TYPES.POST:
-        return `/post/${id}`;
-      case REPORTABLE_TYPES.COMMENT:
-        return `#comment-${id}`; // 댓글은 해당 게시글 페이지로 이동
-      case REPORTABLE_TYPES.USER:
-        return `/user/${id}`;
-      case REPORTABLE_TYPES.STORE:
-        return `/store/${id}`;
-      default:
-        return "#";
-    }
-  };
+  return createPortal(
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm" onClick={onClose} />
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* 배경 오버레이 */}
-      <div className="absolute inset-0 bg-black bg-opacity-50 dark:bg-opacity-70" onClick={onClose} />
-
-      {/* 모달 컨텐츠 */}
-      <div className="relative bg-white dark:bg-[#292929] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* 모달 헤더 */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-500">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <FiAlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 dark:text-red-400" />
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">신고 상세 정보</h2>
+      <div className="relative flex min-h-full items-center justify-center p-4">
+        <div
+          className="relative bg-white dark:bg-[#292929] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 모달 헤더 */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-500">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <FiAlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 dark:text-red-400" />
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">신고 상세 정보</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              aria-label="닫기"
+            >
+              <FiX className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-            aria-label="닫기"
-          >
-            <FiX className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-          </button>
-        </div>
 
-        {/* 모달 바디 */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="space-y-4 sm:space-y-6">
-            {/* 로딩 상태 */}
-            {loading && (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner isVisible={true} spinnerSize={48} />
-                <span className="ml-3 text-gray-600 dark:text-gray-400">신고 정보를 불러오는 중...</span>
-              </div>
-            )}
-
-            {/* 에러 상태 */}
-            {error && !loading && (
-              <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <FiAlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                  <p className="text-sm font-semibold text-red-600 dark:text-red-400">오류 발생</p>
+          {/* 모달 바디 */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
+            <div className="space-y-4 sm:space-y-6">
+              {/* 로딩 상태 */}
+              {loading && (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner isVisible={true} spinnerSize={48} />
+                  <span className="ml-3 text-gray-600 dark:text-gray-400">신고 정보를 불러오는 중...</span>
                 </div>
-                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-                {reportId && (
-                  <button
-                    onClick={() => reportId && fetchReportDetail(reportId)}
-                    className="mt-3 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors"
-                  >
-                    다시 시도
-                  </button>
-                )}
-              </div>
-            )}
+              )}
 
-            {/* 신고 정보 표시 (로딩 중이 아니고 에러가 없을 때만) */}
-            {!loading && !error && reportDetail && (
-              <>
-                {/* 신고자 정보 - 최상단 */}
-                {reportDetail.reporterNickname && (
-                  <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiUser className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">신고자 정보</h3>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {reportDetail.reporterImageUrl ? (
-                        <img
-                          src={`${import.meta.env.VITE_API_URL}${reportDetail.reporterImageUrl}`}
-                          alt={reportDetail.reporterNickname || "신고자"}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
-                          <FiUser className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-medium text-gray-900 dark:text-white truncate">
+              {/* 에러 상태 */}
+              {error && !loading && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FiAlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">오류 발생</p>
+                  </div>
+                  <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                  {reportId && (
+                    <button
+                      onClick={() => reportId && fetchReportDetail(reportId)}
+                      className="mt-3 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors"
+                    >
+                      다시 시도
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 신고 정보 표시 (로딩 중이 아니고 에러가 없을 때만) */}
+              {!loading && !error && reportDetail && (
+                <>
+                  {/* 신고자 정보 - 최상단 */}
+                  {reportDetail.reporterNickname && (
+                    <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          신고자
+                        </span>
+                        {reportDetail.reporterImageUrl ? (
+                          <img
+                            src={`${import.meta.env.VITE_API_URL}${reportDetail.reporterImageUrl}`}
+                            alt={reportDetail.reporterNickname || "신고자"}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                            <FiUser className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {reportDetail.reporterNickname || "알 수 없음"}
-                        </p>
+                        </span>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* 신고 정보 - 신고 상태, 신고 대상, 신고 사유, 신고일 */}
-                <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">신고 정보</h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 상태</p>
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(reportDetail.status)}`}
-                      >
-                        {getStatusText(reportDetail.status)}
+                  {/* 신고 정보 - 신고 상태, 신고 대상, 신고 사유, 신고 상세 내용, 신고일 */}
+                  <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">신고 정보</h3>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(reportDetail.status)}`}
+                        >
+                          {getStatusText(reportDetail.status)}
+                        </span>
+                      </div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {formatDate(reportDetail.createdAt)}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고일</p>
-                      <p className="text-gray-900 dark:text-white">{formatDate(reportDetail.createdAt)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 대상</p>
-                      <div className="flex items-center gap-2 flex-wrap">
+                    <div className="space-y-4 text-sm text-gray-900 dark:text-white">
+                      <div className="flex flex-wrap gap-2 items-center">
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                           {getReportableTypeText(reportDetail.reportableType)}
                         </span>
-                        {(reportDetail.postTitle || reportDetail.link) && (
-                          <Link
-                            to={reportDetail.link || getReportableLink(reportDetail.reportableType, reportDetail.id)}
-                            className="text-gray-900 dark:text-white hover:text-primary-light dark:hover:text-primary-dark hover:underline truncate"
-                          >
-                            {reportDetail.postTitle ||
-                              (reportDetail.reportableType === REPORTABLE_TYPES.COMMENT
-                                ? "댓글 보기"
-                                : reportDetail.reportableType === REPORTABLE_TYPES.STORE
-                                  ? "매장 보기"
-                                  : "신고 대상 보기")}
-                          </Link>
-                        )}
+                        <span className="text-sm font-medium">
+                          {reportDetail.reasonType ? getReasonTypeText(reportDetail.reasonType) : "-"}
+                        </span>
                       </div>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">신고 사유</p>
-                      <p className="text-gray-900 dark:text-white">
-                        {reportDetail.reasonType ? getReasonTypeText(reportDetail.reasonType) : "-"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                {/* 신고 상세 내용 */}
-                {reportDetail.reasonDetail && (
-                  <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FiFileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">신고 상세 내용</h3>
-                    </div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                      {reportDetail.reasonDetail}
-                    </p>
-                  </div>
-                )}
-
-                {/* 신고 대상 내용 - 토글 버튼 */}
-                {(reportDetail.content || reportDetail.postTitle) && (
-                  <div className="bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
-                    <button
-                      onClick={() => setShowReportableContent(!showReportableContent)}
-                      className="w-full p-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FiAlertTriangle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                          신고 대상 내용{" "}
-                          {reportDetail.reportableType === REPORTABLE_TYPES.POST
-                            ? "(게시글)"
-                            : reportDetail.reportableType === REPORTABLE_TYPES.COMMENT
-                              ? "(댓글)"
-                              : ""}
-                        </h3>
-                      </div>
-                      {showReportableContent ? (
-                        <FiChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                      ) : (
-                        <FiChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                      )}
-                    </button>
-                    {showReportableContent && (
-                      <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-600 pt-4">
-                        {reportDetail.authorNickname && (
-                          <div className="mb-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">작성자: </span>
-                            <span className="text-xs text-gray-700 dark:text-gray-300">
-                              {reportDetail.authorNickname}
-                            </span>
-                          </div>
-                        )}
-                        {reportDetail.postTitle && (
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                            {reportDetail.postTitle}
-                          </p>
-                        )}
-                        {reportDetail.content && (
-                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                            {reportDetail.content}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 처리 정보 (처리된 경우) */}
-                {reportDetail.status !== REPORT_STATUSES.PENDING && reportDetail.adminId && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-700">
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiClock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-200">처리 정보</h3>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">처리 관리자</p>
-                        <p className="text-blue-900 dark:text-blue-100">{reportDetail.adminId}</p>
-                      </div>
-                      {reportDetail.handledAt && (
-                        <div>
-                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">처리 일시</p>
-                          <p className="text-blue-900 dark:text-blue-100">{formatDate(reportDetail.handledAt)}</p>
-                        </div>
-                      )}
-                      {reportDetail.actionTaken && (
-                        <div>
-                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">처리 내용</p>
-                          <p className="text-blue-900 dark:text-blue-100 whitespace-pre-wrap">
-                            {reportDetail.actionTaken}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* 처리 폼 (대기 상태인 경우) */}
-                {reportDetail.status === REPORT_STATUSES.PENDING && (
-                  <>
-                    {showProcessForm ? (
-                      <div className="p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-700">
-                        <div className="flex items-center justify-between mb-3">
+                      {reportDetail.reasonDetail && (
+                        <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <FiAlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                            <p className="text-sm font-semibold text-red-600 dark:text-red-400">신고 처리</p>
+                            <FiFileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">신고 상세 내용</span>
                           </div>
-                          <button
-                            onClick={() => {
-                              setShowProcessForm(false);
-                              setActionTaken("");
-                            }}
-                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                          >
-                            취소
-                          </button>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                            {reportDetail.reasonDetail}
+                          </p>
                         </div>
+                      )}
 
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">처리 상태 *</label>
-                            <select
-                              value={processStatus}
-                              onChange={(e) => setProcessStatus(e.target.value as ReportStatus)}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#292929] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                            >
-                              <option value={REPORT_STATUSES.RESOLVED}>처리완료</option>
-                              <option value={REPORT_STATUSES.DISMISSED}>기각</option>
-                            </select>
+                      {(reportDetail.content || reportDetail.postTitle) && (
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => setShowReportableContent(!showReportableContent)}
+                            className="w-full flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-600 bg-white/60 dark:bg-black/30 px-4 py-3 text-left text-gray-900 dark:text-white transition-colors hover:border-primary-light/60 hover:bg-primary-light/10 dark:hover:border-primary-dark/50 dark:hover:bg-primary-dark/20"
+                          >
+                            <span className="flex items-center gap-2 text-sm font-semibold">
+                              <FiAlertTriangle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                              신고 대상 컨텐츠 미리보기
+                            </span>
+                            {showReportableContent ? (
+                              <FiChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                            ) : (
+                              <FiChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                            )}
+                          </button>
+
+                          {showReportableContent && (
+                            <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-[#232323] px-4 py-3 space-y-3">
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                  {reportDetail.postTitle && (
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                      {reportDetail.postTitle}
+                                    </p>
+                                  )}
+                                  {reportDetail.authorNickname && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      작성자:{" "}
+                                      <span className="text-gray-700 dark:text-gray-300">
+                                        {reportDetail.authorNickname}
+                                      </span>
+                                    </p>
+                                  )}
+                                </div>
+
+                                {reportDetail.link && (
+                                  <Link
+                                    to={reportDetail.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-md border border-primary-light/40 dark:border-primary-dark/40 px-2 py-1 text-xs font-medium text-primary-light dark:text-primary-dark transition-colors hover:bg-primary-light/10 dark:hover:bg-primary-dark/20"
+                                  >
+                                    <FiExternalLink className="h-4 w-4" />
+                                    이동
+                                  </Link>
+                                )}
+                              </div>
+
+                              {reportDetail.content && (
+                                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                  {reportDetail.content}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 신고 처리 섹션 */}
+                  <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">신고 처리</h3>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {reportDetail.handledAt ? formatDate(reportDetail.handledAt) : "미처리"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-4 text-sm text-gray-900 dark:text-white">
+                      {reportDetail.status === REPORT_STATUSES.PENDING ? (
+                        <div className="space-y-4">
+                          <div className="space-y-1">
+                            <label className="block text-xs text-gray-600 dark:text-gray-400">처리 상태 *</label>
+                            <Listbox value={processStatus} onChange={setProcessStatus}>
+                              <div className="relative">
+                                <Listbox.Button className="relative w-full cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#292929] py-2 pl-3 pr-10 text-left text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                                  <span className="block truncate">
+                                    {processStatus === REPORT_STATUSES.RESOLVED ? "처리완료" : "기각"}
+                                  </span>
+                                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
+                                    <FiChevronDown className="h-4 w-4" aria-hidden="true" />
+                                  </span>
+                                </Listbox.Button>
+                                <Transition
+                                  leave="transition ease-in duration-100"
+                                  leaveFrom="opacity-100"
+                                  leaveTo="opacity-0"
+                                >
+                                  <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] py-1 text-sm shadow-lg focus:outline-none">
+                                    <Listbox.Option
+                                      className={({ active }) =>
+                                        `relative cursor-pointer select-none px-4 py-2 text-sm ${
+                                          active
+                                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                            : "text-gray-900 dark:text-gray-100"
+                                        }`
+                                      }
+                                      value={REPORT_STATUSES.RESOLVED}
+                                    >
+                                      처리완료
+                                    </Listbox.Option>
+                                    <Listbox.Option
+                                      className={({ active }) =>
+                                        `relative cursor-pointer select-none px-4 py-2 text-sm ${
+                                          active
+                                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                            : "text-gray-900 dark:text-gray-100"
+                                        }`
+                                      }
+                                      value={REPORT_STATUSES.DISMISSED}
+                                    >
+                                      기각
+                                    </Listbox.Option>
+                                  </Listbox.Options>
+                                </Transition>
+                              </div>
+                            </Listbox>
                           </div>
 
                           <div>
@@ -484,7 +478,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
                               onChange={(e) => setActionTaken(e.target.value)}
                               placeholder={
                                 processStatus === REPORT_STATUSES.RESOLVED
-                                  ? "처리 내용을 입력해주세요..."
+                                  ? "처리 결과를 입력해주세요..."
                                   : "기각 사유를 입력해주세요... (선택사항)"
                               }
                               rows={4}
@@ -495,52 +489,52 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
                           <button
                             onClick={handleProcessReport}
                             disabled={processing || (processStatus === REPORT_STATUSES.RESOLVED && !actionTaken.trim())}
-                            className={`w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors ${
+                            className={`w-full px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors ${
                               processing || (processStatus === REPORT_STATUSES.RESOLVED && !actionTaken.trim())
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
+                                ? "bg-red-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
                             }`}
                           >
                             {processing ? "처리 중..." : "처리 확정"}
                           </button>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={() => setShowProcessForm(true)}
-                          className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
-                        >
-                          신고 처리하기
-                        </button>
-                        <button
-                          onClick={onClose}
-                          className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          닫기
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
+                      ) : (
+                        <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-black/30 p-4 space-y-4">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">처리 관리자</p>
+                              <p className="text-sm text-gray-900 dark:text-white">
+                                {reportDetail.adminId ? `관리자 #${reportDetail.adminId}` : "-"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">처리 일시</p>
+                              <p className="text-sm text-gray-900 dark:text-white">
+                                {reportDetail.handledAt ? formatDate(reportDetail.handledAt) : "-"}
+                              </p>
+                            </div>
+                          </div>
 
-                {/* 이미 처리된 경우 */}
-                {reportDetail.status !== REPORT_STATUSES.PENDING && (
-                  <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                    <button
-                      onClick={onClose}
-                      className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      닫기
-                    </button>
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">처리 내용</p>
+                            <p className="rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-[#232323] px-3 py-2 text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
+                              {reportDetail.actionTaken?.trim()
+                                ? reportDetail.actionTaken
+                                : "등록된 처리 내용이 없습니다."}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
