@@ -4,7 +4,6 @@ import { Listbox, Transition } from "@headlessui/react";
 import type { ReportListDto, ReportListResponse } from "../../../../shared/report.types";
 import { REPORT_STATUSES, REPORTABLE_TYPES, REASON_TYPES, type ReportStatus } from "../../../../shared/constants";
 import Pagination from "../Pagination";
-// import { api } from "../../api/axios";
 import ReportDetailModal from "./ReportDetailModal";
 import { api } from "../../api/axios";
 
@@ -24,7 +23,7 @@ const ReportManagement: React.FC = () => {
     { value: "ALL" as ReportStatus | "ALL", label: "전체 상태" },
     { value: REPORT_STATUSES.PENDING, label: "대기" },
     { value: REPORT_STATUSES.RESOLVED, label: "처리완료" },
-    { value: REPORT_STATUSES.DISMISSED, label: "반려됨" },
+    { value: REPORT_STATUSES.DISMISSED, label: "반려" },
   ];
 
   // 신고 목록 조회

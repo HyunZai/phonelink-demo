@@ -210,6 +210,38 @@ const Navbar: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 right-0 bg-white dark:bg-[#292929] shadow-lg border-t border-gray-200 dark:border-gray-500">
           <div className="px-4 py-3 space-y-2">
+            <div className="pb-3 mb-3 border-b border-gray-200 dark:border-gray-600">
+              {isAuthenticated ? (
+                <Link
+                  to="/mypage"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-[#1f1f1f] hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors"
+                >
+                  {user?.profileImageUrl ? (
+                    <img
+                      src={`${import.meta.env.VITE_API_URL}${user.profileImageUrl}`}
+                      alt="프로필"
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 dark:bg-[#292929]">
+                      <FaUserAlt className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.nickname || "사용자"}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">마이페이지 이동</p>
+                  </div>
+                </Link>
+              ) : (
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block">
+                  <button className="w-full p-3 rounded-lg bg-primary-light hover:bg-[#3d5e33] dark:bg-primary-dark dark:hover:bg-[#759161] text-white dark:text-foreground-light text-sm font-semibold transition-colors">
+                    로그인
+                  </button>
+                </Link>
+              )}
+            </div>
+
             {/* 가격 비교 */}
             <Link to="/offer" onClick={() => setIsMobileMenuOpen(false)}>
               <button className="w-full text-left px-4 py-2 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f1f1f] rounded-lg transition-colors">
