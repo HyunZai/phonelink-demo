@@ -1127,6 +1127,62 @@ router.get("/reports/:id", async (req, res) => {
     });
   }
 });
+
+router.post("/reports/:id/process", async (req: AuthenticatedRequest, res) => {
+  try {
+    const { id } = req.params;
+    const reportId = parseInt(id, 10);
+    const { status, actionTaken } = req.body;
+
+    if (isNaN(reportId) || reportId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "유효하지 않은 신고 ID입니다.",
+      });
+    }
+
+    if (!status || (!actionTaken && status !== REPORT_STATUSES.DISMISSED)) {
+      return res.status(400).json({
+        success: false,
+        message: "처리 상태와 처리 내용을 입력해주세요.",
+      });
+    }
+
+    const reportRepo = AppDataSource.getRepository(Report);
+    const report = await reportRepo.findOne({ where: { id: reportId } });
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: "해당 신고를 찾을 수 없습니다.",
+      });
+    }
+
+    if (report.status !== REPORT_STATUSES.PENDING) {
+      return res.status(400).json({
+        success: false,
+        message: "이미 처리된 신고입니다.",
+      });
+    }
+
+    report.status = status;
+    report.actionTaken = actionTaken;
+    report.adminId = req.user?.id;
+    report.handledAt = new Date();
+    await reportRepo.save(report);
+
+    res.status(200).json({
+      success: true,
+      data: report,
+    });
+  } catch (error) {
+    handleError(error, req, res, {
+      message: "신고 처리 중 오류가 발생했습니다.",
+      errorCode: "PROCESS_REPORT_ERROR",
+      additionalContext: { reportId: req.params.id },
+    });
+  }
+});
 // #endregion
 
 export default router;
