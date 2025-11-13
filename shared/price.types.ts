@@ -1,4 +1,4 @@
-import { OfferType } from "./constants";
+import type { OfferType } from "./constants";
 
 /**
  * 엑셀 파일에서 파싱된 개별 가격 정보

@@ -40,7 +40,7 @@ export class User {
   @Column({ name: "profile_image_url", type: "varchar", length: 2048 })
   profileImageUrl?: string;
 
-  @Column({ type: "enum", enum: ["M", "F"] })
+  @Column({ type: "enum", enum: ["M", "F"], nullable: false })
   gender?: "M" | "F";
 
   @Column({ name: "birth_year", type: "year" })
@@ -52,7 +52,7 @@ export class User {
   @Column({ name: "age_range", type: "varchar", length: 10 })
   ageRange?: string;
 
-  @Column({ name: "phone_number", type: "varchar", length: 20, unique: true })
+  @Column({ name: "phone_number", type: "varchar", length: 20, unique: true, nullable: false })
   phoneNumber?: string;
 
   @Column({ name: "postal_code", type: "varchar", length: 10 })
