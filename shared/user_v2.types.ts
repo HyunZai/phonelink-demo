@@ -1,16 +1,20 @@
 //-----------------------------
 // 회원가입 기본 정보
 //-----------------------------
+import type { Role } from "./constants";
+
 export interface SignupUserInfo {
   email: string;
-  password?: string; // SSO는 없음
+  password?: string; // 일반 회원가입 시에만 필수
   name: string;
   nickname?: string;
   gender: "M" | "F" | ""; // 선택 전에는 빈값
   birthYear?: number;
-  birthday?: string; // MM-DD
+  birthday?: string; // YYYY-MM-DD
   ageRange?: string; // e.g. "20-29"
   phoneNumber: string;
+  role: Role;
+  lastLoginType?: string;
 
   // 주소
   postalCode?: string;
@@ -18,6 +22,9 @@ export interface SignupUserInfo {
   sigungu?: string;
   address?: string;
   addressDetail?: string;
+
+  // 매장 정보
+  storeId?: number;
 
   // SSO provider 정보
   provider?: "local" | "google" | "kakao" | "naver";
