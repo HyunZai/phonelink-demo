@@ -4,86 +4,116 @@ import axios from "axios";
 import { api } from "../api/axios";
 import { toast } from "sonner";
 import type { SignupFormData, StoreDto, DaumPostcodeData } from "../../../shared/types";
+import type { SignupUserInfo } from "../../../shared/user_v2.types";
 import AddressSearchButton from "../components/AddressSearchButton";
 import StoreSearchableSelect from "../components/StoreSearchableSelect";
 import { ROLES } from "../../../shared/constants";
+import { useSignupStore } from "../store/signupStore";
 
 const SignupPage: React.FC = () => {
-  const [formData, setFormData] = useState<SignupFormData>({
-    email: "",
-    password: "",
-    name: "",
-    birthday: "",
-    phoneNumber: "",
-    gender: "M",
-    role: ROLES.USER,
-    address: "",
-    addressDetail: "",
-    lastLoginType: "",
-  });
+  const agreements = useSignupStore((state) => state.agreements);
+  const userInfo = useSignupStore((state) => state.userInfo);
+  const setUserInfo = useSignupStore((state) => state.setUserInfo);
+  const setAgreementsStore = useSignupStore((state) => state.setAgreements);
+  const loadSocialUserInfo = useSignupStore((state) => state.loadSocialUserInfo);
+  const resetSignupStore = useSignupStore((state) => state.reset);
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof SignupFormData | "passwordConfirm", string>>>({});
   const [isSsoSignup, setIsSsoSignup] = useState(false);
   const [signupToken, setSignupToken] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreDto | null>(null);
   const [stores, setStores] = useState<StoreDto[]>([]); // 대리점 목록 상태 추가
+  const handleStoreSelect = (store: StoreDto | null) => {
+    setSelectedStore(store);
+    setUserInfo("storeId", store?.id ?? undefined);
+  };
 
   const navigate = useNavigate();
   const location = useLocation();
+  const locationState = location.state as { ssoData?: any; signupToken?: string } | null;
   const addressDetailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (userInfo.role !== ROLES.SELLER && selectedStore) {
+      setSelectedStore(null);
+      setUserInfo("storeId", undefined);
+    }
+  }, [selectedStore, setUserInfo, userInfo.role]);
+
+  const hasAcceptedAllAgreements = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
 
   // 동의 정보 검증 및 SSO 회원가입 정보 처리
   useEffect(() => {
-    // 동의 정보가 없으면 동의 페이지로 리다이렉트
-    const agreementData = sessionStorage.getItem("signupAgreements");
-    if (!agreementData) {
-      toast.error("약관 동의가 필요합니다.");
-      navigate("/agreement", { replace: true });
+    const agreementReady = () => {
+      if (hasAcceptedAllAgreements) {
+        return true;
+      }
+
+      const agreementData = sessionStorage.getItem("signupAgreements");
+      if (!agreementData) {
+        toast.error("약관 동의가 필요합니다.");
+        navigate("/agreement", { replace: true });
+        return false;
+      }
+
+      try {
+        const parsed = JSON.parse(agreementData);
+        setAgreementsStore({
+          agreePrivacyUse: parsed.agreePrivacyUse,
+          agreeAgeOver14: parsed.agreeAgeOver14,
+          agreeTerms: parsed.agreeTerms,
+        });
+        return true;
+      } catch (error) {
+        console.error("약관 정보 파싱 오류:", error);
+        toast.error("약관 정보를 불러오지 못했습니다.");
+        navigate("/agreement", { replace: true });
+        return false;
+      }
+    };
+
+    if (!agreementReady()) {
       return;
     }
 
-    // SSO 회원가입인 경우 signupToken과 ssoData 처리
+    const hydrateSocialData = (rawData: any, token: string | null) => {
+      const birthdate = rawData?.birthYear && rawData?.birthday ? `${rawData.birthYear}-${rawData.birthday}` : "";
+
+      loadSocialUserInfo({
+        email: rawData?.email || "",
+        name: rawData?.name || "",
+        gender: rawData?.gender || "M",
+        phoneNumber: rawData?.phoneNumber?.replace("+82 ", "0") || "",
+        birthday: birthdate,
+        provider: rawData?.provider || "local",
+      });
+      setIsSsoSignup(true);
+      setSignupToken(token);
+    };
+
     const ssoSignupToken = sessionStorage.getItem("ssoSignupToken");
     const ssoSignupDataStr = sessionStorage.getItem("ssoSignupData");
 
     if (ssoSignupToken && ssoSignupDataStr) {
       try {
         const ssoData = JSON.parse(ssoSignupDataStr);
-        const birthdate = ssoData.birthYear && ssoData.birthday ? `${ssoData.birthYear}-${ssoData.birthday}` : "";
-
-        setFormData((prev) => ({
-          ...prev,
-          email: ssoData.email || "",
-          name: ssoData.name || "",
-          gender: ssoData.gender || "M",
-          phoneNumber: ssoData.phoneNumber?.replace("+82 ", "0") || "",
-          birthday: birthdate,
-        }));
-        setIsSsoSignup(true);
-        setSignupToken(ssoSignupToken);
+        hydrateSocialData(ssoData, ssoSignupToken);
       } catch (error) {
         console.error("SSO 데이터 파싱 오류:", error);
         toast.error("회원가입 정보를 불러오는데 실패했습니다.");
         navigate("/agreement", { replace: true });
       }
+      return;
     }
-    // 일반 회원가입은 기존 로직 유지 (location.state는 하위 호환성을 위해 유지)
-    else if (location.state?.ssoData) {
-      const { ssoData, signupToken } = location.state;
-      const birthdate = ssoData.birthYear && ssoData.birthday ? `${ssoData.birthYear}-${ssoData.birthday}` : "";
 
-      setFormData((prev) => ({
-        ...prev,
-        email: ssoData.email || "",
-        name: ssoData.name || "",
-        gender: ssoData.gender || "M",
-        phoneNumber: ssoData.phoneNumber?.replace("+82 ", "0") || "",
-        birthday: birthdate,
-      }));
-      setIsSsoSignup(true);
-      setSignupToken(signupToken);
+    if (locationState?.ssoData) {
+      hydrateSocialData(locationState.ssoData, locationState.signupToken || null);
+      return;
     }
-  }, [location.state, navigate]);
+
+    setIsSsoSignup(false);
+    setSignupToken(null);
+  }, [hasAcceptedAllAgreements, loadSocialUserInfo, locationState, navigate, setAgreementsStore]);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -104,29 +134,24 @@ const SignupPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const target = e.target as HTMLInputElement; // type, checked 속성 접근을 위함
+    const target = e.target as HTMLInputElement;
 
     if (name === "role" && target.type === "checkbox") {
       const isChecked = target.checked;
-      setFormData((prev) => ({
-        ...prev,
-        role: isChecked ? ROLES.SELLER : ROLES.USER,
-      }));
-    } else if (name === "phoneNumber") {
-      const formattedPhoneNumber = value
-        .replace(/[^0-9]/g, "") // 숫자 이외의 문자 제거
-        .replace(/^(\d{0,3})(\d{0,4})(\d{0,4})$/, "$1-$2-$3") // 하이픈 추가
-        .replace(/(-{1,2})$/g, ""); // 마지막에 붙는 하이픈 제거
-      setFormData((prev) => ({
-        ...prev,
-        [name]: formattedPhoneNumber,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: name === "birthYear" ? Number(value) || undefined : value,
-      }));
+      setUserInfo("role", isChecked ? ROLES.SELLER : ROLES.USER);
+      return;
     }
+
+    if (name === "phoneNumber") {
+      const formattedPhoneNumber = value
+        .replace(/[^0-9]/g, "")
+        .replace(/^(\d{0,3})(\d{0,4})(\d{0,4})$/, "$1-$2-$3")
+        .replace(/(-{1,2})$/g, "");
+      setUserInfo("phoneNumber", formattedPhoneNumber);
+      return;
+    }
+
+    setUserInfo(name as keyof SignupUserInfo, name === "birthYear" ? Number(value) || undefined : value);
   };
 
   const handleAddressComplete = (data: DaumPostcodeData) => {
@@ -143,20 +168,16 @@ const SignupPage: React.FC = () => {
       fullAddress += extraAddress !== "" ? ` (${extraAddress})` : "";
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      postalCode: data.zonecode,
-      sido: data.sido,
-      sigungu: data.sigungu,
-      address: fullAddress,
-    }));
-    console.log(formData);
+    setUserInfo("postalCode", data.zonecode);
+    setUserInfo("sido", data.sido);
+    setUserInfo("sigungu", data.sigungu);
+    setUserInfo("address", fullAddress);
     // 상세 주소 필드로 포커스 이동
     addressDetailRef.current?.focus();
   };
 
   const validatePassword = () => {
-    const { password } = formData;
+    const { password } = userInfo;
     let errorMessage = "";
 
     if (!password) {
@@ -183,7 +204,7 @@ const SignupPage: React.FC = () => {
       }));
       return false;
     }
-    if (formData.password !== passwordConfirm) {
+    if ((userInfo.password || "") !== passwordConfirm) {
       setErrors((prev) => ({
         ...prev,
         passwordConfirm: "비밀번호가 일치하지 않습니다.",
@@ -208,34 +229,34 @@ const SignupPage: React.FC = () => {
     let formIsValid = true;
 
     // --- Common Fields Validation ---
-    if (!formData.name) {
+    if (!userInfo.name) {
       newErrors.name = "이름을 입력해주세요.";
       formIsValid = false;
     }
-    if (!formData.gender) {
+    if (!userInfo.gender) {
       newErrors.gender = "성별을 선택해주세요.";
       formIsValid = false;
     }
     // 생년월일은 선택 사항
-    // if (!formData.birthday) {
+    // if (!userInfo.birthday) {
     //   newErrors.birthday = "생년월일을 입력해주세요.";
     //   formIsValid = false;
     // }
     // 전화번호는 필수 사항, 입력 시 형식 검사
-    if (!formData.phoneNumber) {
+    if (!userInfo.phoneNumber) {
       newErrors.phoneNumber = "전화번호를 입력해주세요.";
       formIsValid = false;
-    } else if (formData.phoneNumber.length !== 13) {
+    } else if (userInfo.phoneNumber.length !== 13) {
       newErrors.phoneNumber = "전화번호 11자리를 올바르게 입력해주세요.";
       formIsValid = false;
     }
 
     // --- Traditional Signup Fields Validation ---
     if (!isSsoSignup) {
-      if (!formData.email) {
+      if (!userInfo.email) {
         newErrors.email = "이메일을 입력해주세요.";
         formIsValid = false;
-      } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      } else if (!/^\S+@\S+\.\S+$/.test(userInfo.email)) {
         newErrors.email = "올바른 이메일 형식이 아닙니다.";
         formIsValid = false;
       }
@@ -254,7 +275,7 @@ const SignupPage: React.FC = () => {
       return;
     }
 
-    if (formData.role === ROLES.SELLER && !selectedStore) {
+    if (userInfo.role === ROLES.SELLER && !selectedStore) {
       toast.error("판매자 가입 시 소속 매장을 선택해야 합니다.");
       return;
     }
@@ -270,13 +291,14 @@ const SignupPage: React.FC = () => {
 
       const agreementData = JSON.parse(agreementDataStr);
       // userId 필드는 제거 (백엔드에서 처리)
-      const { userId, ...agreements } = agreementData;
+      const { userId: _ignoredUserId, ...agreements } = agreementData;
+      void _ignoredUserId;
 
       const payload = {
-        ...formData,
+        ...userInfo,
         agreements, // 동의 정보 포함
         ...(isSsoSignup && { signupToken }),
-        ...(formData.role === ROLES.SELLER && { storeId: selectedStore?.id }),
+        ...(userInfo.role === ROLES.SELLER && { storeId: selectedStore?.id }),
       };
 
       await api.post("/user/signup", payload);
@@ -285,6 +307,11 @@ const SignupPage: React.FC = () => {
       sessionStorage.removeItem("signupAgreements");
       sessionStorage.removeItem("ssoSignupToken");
       sessionStorage.removeItem("ssoSignupData");
+      resetSignupStore();
+      setPasswordConfirm("");
+      setSelectedStore(null);
+      setIsSsoSignup(false);
+      setSignupToken(null);
 
       toast.success("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
       navigate("/login");
@@ -319,7 +346,7 @@ const SignupPage: React.FC = () => {
                   id="email"
                   name="email"
                   placeholder="phonelink@example.com"
-                  value={formData.email}
+                  value={userInfo.email || ""}
                   onChange={handleChange}
                   onFocus={handleFocus}
                   disabled={isSsoSignup}
@@ -339,7 +366,7 @@ const SignupPage: React.FC = () => {
                       type="password"
                       id="password"
                       name="password"
-                      value={formData.password || ""}
+                      value={userInfo.password || ""}
                       onChange={handleChange}
                       onBlur={validatePassword}
                       placeholder="영어 / 숫자 / 특수문자 포함 10자 이상"
@@ -379,7 +406,7 @@ const SignupPage: React.FC = () => {
                     type="text"
                     id="name"
                     name="name"
-                    value={formData.name}
+                    value={userInfo.name || ""}
                     onChange={handleChange}
                     onFocus={handleFocus}
                     disabled={isSsoSignup}
@@ -398,7 +425,7 @@ const SignupPage: React.FC = () => {
                         type="radio"
                         name="gender"
                         value="M"
-                        checked={formData.gender === "M"}
+                        checked={userInfo.gender === "M"}
                         onChange={handleChange}
                         onFocus={handleFocus}
                         disabled={isSsoSignup}
@@ -408,7 +435,7 @@ const SignupPage: React.FC = () => {
                         className={`w-full h-10 flex items-center justify-center text-sm border rounded-l-md transition-colors duration-200 ${
                           isSsoSignup
                             ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-700 cursor-not-allowed"
-                            : formData.gender === "M"
+                            : userInfo.gender === "M"
                               ? "bg-primary-light text-white border-primary-light dark:bg-primary-dark dark:text-[#292929] dark:border-primary-dark cursor-pointer"
                               : "bg-white text-gray-700 border-gray-300 dark:bg-transparent dark:text-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                         }`}
@@ -423,7 +450,7 @@ const SignupPage: React.FC = () => {
                         type="radio"
                         name="gender"
                         value="F"
-                        checked={formData.gender === "F"}
+                        checked={userInfo.gender === "F"}
                         onChange={handleChange}
                         onFocus={handleFocus}
                         disabled={isSsoSignup}
@@ -433,7 +460,7 @@ const SignupPage: React.FC = () => {
                         className={`w-full h-10 flex items-center justify-center text-sm border rounded-r-md transition-colors duration-200 ${
                           isSsoSignup
                             ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-700 cursor-not-allowed"
-                            : formData.gender === "F"
+                            : userInfo.gender === "F"
                               ? "bg-primary-light text-white border-primary-light dark:bg-primary-dark dark:text-[#292929] dark:border-primary-dark cursor-pointer"
                               : "bg-white text-gray-700 border-gray-300 dark:bg-transparent dark:text-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                         }`}
@@ -462,7 +489,7 @@ const SignupPage: React.FC = () => {
                     type="date"
                     id="birthday"
                     name="birthday"
-                    value={formData.birthday || ""}
+                    value={userInfo.birthday || ""}
                     onChange={handleChange}
                     onFocus={handleFocus}
                     disabled={isSsoSignup}
@@ -480,7 +507,7 @@ const SignupPage: React.FC = () => {
                     type="tel"
                     id="phoneNumber"
                     name="phoneNumber"
-                    value={formData.phoneNumber || ""}
+                    value={userInfo.phoneNumber || ""}
                     onChange={handleChange}
                     onFocus={handleFocus}
                     maxLength={13}
@@ -502,7 +529,7 @@ const SignupPage: React.FC = () => {
                     type="text"
                     id="address"
                     name="address"
-                    value={formData.address}
+                    value={userInfo.address || ""}
                     onChange={handleChange}
                     onFocus={handleFocus}
                     readOnly
@@ -522,7 +549,7 @@ const SignupPage: React.FC = () => {
                   type="text"
                   id="addressDetail"
                   name="addressDetail"
-                  value={formData.addressDetail}
+                  value={userInfo.addressDetail || ""}
                   onChange={handleChange}
                   onFocus={handleFocus}
                   ref={addressDetailRef}
@@ -532,7 +559,7 @@ const SignupPage: React.FC = () => {
               </div>
 
               {/* Store Selector (Conditional) */}
-              {formData.role === ROLES.SELLER && (
+              {userInfo.role === ROLES.SELLER && (
                 <div className="transition-all duration-300 ease-in-out">
                   <label htmlFor="storeId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     소속 매장 <span className="text-red-500">*</span>
@@ -540,7 +567,7 @@ const SignupPage: React.FC = () => {
                   <StoreSearchableSelect
                     stores={stores}
                     selectedStore={selectedStore}
-                    onStoreSelect={setSelectedStore}
+                    onStoreSelect={handleStoreSelect}
                   />
                   <p className="h-4 mt-1 text-xs text-red-500">
                     {/* {errors.storeId ? errors.storeId : <span>&nbsp;</span>} */}
@@ -563,7 +590,7 @@ const SignupPage: React.FC = () => {
                   name="role"
                   type="checkbox"
                   className="sr-only peer"
-                  checked={formData.role === ROLES.SELLER}
+                  checked={userInfo.role === ROLES.SELLER}
                   onChange={handleChange}
                 />
                 <div className="w-5 h-5 transition-colors duration-200 border-2 border-gray-300 rounded peer-checked:border-primary-light peer-checked:bg-primary-light dark:border-gray-600 dark:peer-checked:border-primary-dark dark:peer-checked:bg-primary-dark"></div>
@@ -585,7 +612,7 @@ const SignupPage: React.FC = () => {
             </div>
           </div>
 
-          {formData.role === ROLES.SELLER && (
+          {userInfo.role === ROLES.SELLER && (
             <p className="mt-2 text-center text-[13.5px] text-red-500">
               판매자 계정 가입인 경우 해당 매장의 관리자의 승인 이후 판매자 권한이 부여됩니다.
             </p>
@@ -594,7 +621,7 @@ const SignupPage: React.FC = () => {
           <button
             type="submit"
             className={`w-full px-4 py-2 ${
-              formData.role === ROLES.SELLER ? "mt-2" : "mt-4"
+              userInfo.role === ROLES.SELLER ? "mt-2" : "mt-4"
             } font-bold text-white dark:text-black bg-primary-light rounded-md hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light dark:bg-primary-dark dark:hover:bg-opacity-80`}
           >
             {isSsoSignup ? "가입 완료" : "가입하기"}

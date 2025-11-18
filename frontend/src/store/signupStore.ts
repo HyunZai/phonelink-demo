@@ -1,224 +1,137 @@
 import { create } from "zustand";
-import type { UserAgreementCreateData } from "../../../shared/userAgreement.types";
+import { ROLES } from "../../../shared/constants";
+import type { SignupUserInfo, AgreementState, FinalSignupPayload } from "../../../shared/user_v2.types";
 
-export type SignupFlowType = "LOCAL" | "SSO";
+interface SignupStoreState {
+  // 1단계: 약관 동의
+  agreements: AgreementState;
 
-type AgreementField = "agreePrivacyUse" | "agreeAgeOver14" | "agreeTerms";
+  // 2단계: 기본 회원정보
+  userInfo: SignupUserInfo;
 
-type StoredAgreementState = Pick<UserAgreementCreateData, AgreementField> & {
-  userId: UserAgreementCreateData["userId"];
-};
+  // 흐름 제어
+  currentStep: number; // 1: 동의 → 2: 정보 입력
 
-export type SsoSignupData = {
-  email?: string;
-  name?: string;
-  gender?: string;
-  phoneNumber?: string;
-  birthYear?: string | number;
-  birthday?: string;
-  profileImageUrl?: string;
-  [key: string]: unknown;
-};
+  // 액션
+  setAgreement: (key: keyof AgreementState, value: boolean) => void;
+  setAgreements: (next: Partial<AgreementState>) => void;
+  setUserInfo: (key: keyof SignupUserInfo, value: any) => void;
+  loadSocialUserInfo: (data: Partial<SignupUserInfo>) => void;
+  nextStep: () => void;
+  reset: () => void;
 
-interface SignupState {
-  agreements: StoredAgreementState;
-  agreementsAcceptedAt: number | null;
-  flow: SignupFlowType | null;
-  ssoSignupToken: string | null;
-  ssoSignupData: SsoSignupData | null;
+  // 최종 제출 페이로드 생성
+  buildPayload: () => FinalSignupPayload;
 }
 
-interface SignupActions {
-  setSignupFlow: (flow: SignupFlowType | null) => void;
-  setAgreementUserId: (userId: number) => void;
-  setAgreementField: (field: AgreementField, value: boolean) => void;
-  setAgreements: (agreements: Partial<StoredAgreementState>) => void;
-  setAllAgreements: (value: boolean, options?: { userId?: number }) => void;
-  clearAgreements: () => void;
-  hasAcceptedAll: () => boolean;
-  setSsoSignupContext: (token: string | null, data: SsoSignupData | null) => void;
-  clearSsoSignupContext: () => void;
-  resetSignup: () => void;
-}
+export const useSignupStore = create<SignupStoreState>((set, get) => ({
+  // 초기값
+  agreements: {
+    agreePrivacyUse: false,
+    agreeAgeOver14: false,
+    agreeTerms: false,
+  },
 
-type SignupStore = SignupState & SignupActions;
+  userInfo: {
+    email: "",
+    password: "",
+    name: "",
+    nickname: "",
+    gender: "M",
+    birthYear: undefined,
+    birthday: "",
+    ageRange: "",
+    phoneNumber: "",
+    postalCode: "",
+    sido: "",
+    sigungu: "",
+    address: "",
+    addressDetail: "",
+    provider: "local",
+    role: ROLES.USER,
+    lastLoginType: "",
+    storeId: undefined,
+  },
 
-const DEFAULT_AGREEMENTS: StoredAgreementState = {
-  userId: 0,
-  agreePrivacyUse: false,
-  agreeAgeOver14: false,
-  agreeTerms: false,
-};
+  currentStep: 1,
 
-const SESSION_KEYS = {
-  AGREEMENTS: "signupAgreements",
-  SSO_TOKEN: "ssoSignupToken",
-  SSO_DATA: "ssoSignupData",
-} as const;
+  // 동의항목 업데이트
+  setAgreement: (key, value) =>
+    set((state) => ({
+      agreements: {
+        ...state.agreements,
+        [key]: value,
+      },
+    })),
 
-const canUseSessionStorage = typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
+  setAgreements: (next) =>
+    set((state) => ({
+      agreements: {
+        ...state.agreements,
+        ...next,
+      },
+    })),
 
-const readSessionJSON = <T>(key: string, fallback: T): T => {
-  if (!canUseSessionStorage) {
-    return fallback;
-  }
+  // 일반 사용자 정보 업데이트
+  setUserInfo: (key, value) =>
+    set((state) => ({
+      userInfo: {
+        ...state.userInfo,
+        [key]: value,
+      },
+    })),
 
-  const raw = window.sessionStorage.getItem(key);
-  if (!raw) {
-    return fallback;
-  }
+  // 소셜 로그인으로 받아온 정보 업데이트
+  // (email, name, gender 등 자동 세팅됨)
+  loadSocialUserInfo: (data) =>
+    set((state) => ({
+      userInfo: {
+        ...state.userInfo,
+        ...data,
+        provider: data.provider ?? state.userInfo.provider,
+      },
+    })),
 
-  try {
-    return JSON.parse(raw) as T;
-  } catch (error) {
-    console.warn(`[signupStore] Failed to parse sessionStorage item: ${key}`, error);
-    return fallback;
-  }
-};
+  // 단계 이동
+  nextStep: () =>
+    set((state) => ({
+      currentStep: Math.min(state.currentStep + 1, 2),
+    })),
 
-const writeSessionJSON = (key: string, value: unknown) => {
-  if (!canUseSessionStorage) {
-    return;
-  }
+  // 전부 초기화
+  reset: () =>
+    set({
+      agreements: {
+        agreePrivacyUse: false,
+        agreeAgeOver14: false,
+        agreeTerms: false,
+      },
+      userInfo: {
+        email: "",
+        password: "",
+        name: "",
+        nickname: "",
+        gender: "M",
+        birthYear: undefined,
+        birthday: "",
+        ageRange: "",
+        phoneNumber: "",
+        postalCode: "",
+        sido: "",
+        sigungu: "",
+        address: "",
+        addressDetail: "",
+        provider: "local",
+        role: ROLES.USER,
+        lastLoginType: "",
+        storeId: undefined,
+      },
+      currentStep: 1,
+    }),
 
-  if (value === null || value === undefined) {
-    window.sessionStorage.removeItem(key);
-    return;
-  }
-
-  window.sessionStorage.setItem(key, JSON.stringify(value));
-};
-
-const writeSessionValue = (key: string, value: string | null | undefined) => {
-  if (!canUseSessionStorage) {
-    return;
-  }
-
-  if (value === null || value === undefined) {
-    window.sessionStorage.removeItem(key);
-    return;
-  }
-
-  window.sessionStorage.setItem(key, value);
-};
-
-const hasAllAgreements = (agreements: StoredAgreementState) =>
-  agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
-
-const getInitialAgreements = (): StoredAgreementState => {
-  const stored = readSessionJSON<StoredAgreementState | null>(SESSION_KEYS.AGREEMENTS, null);
-  if (!stored) {
-    return { ...DEFAULT_AGREEMENTS };
-  }
-
-  return {
-    ...DEFAULT_AGREEMENTS,
-    ...stored,
-    userId: typeof stored.userId === "number" ? stored.userId : DEFAULT_AGREEMENTS.userId,
-  };
-};
-
-const getInitialSsoToken = (): string | null => {
-  if (!canUseSessionStorage) {
-    return null;
-  }
-  return window.sessionStorage.getItem(SESSION_KEYS.SSO_TOKEN);
-};
-
-const getInitialSsoData = (): SsoSignupData | null =>
-  readSessionJSON<SsoSignupData | null>(SESSION_KEYS.SSO_DATA, null);
-
-export const useSignupStore = create<SignupStore>((set, get) => {
-  const initialAgreements = getInitialAgreements();
-
-  return {
-    agreements: initialAgreements,
-    agreementsAcceptedAt: hasAllAgreements(initialAgreements) ? Date.now() : null,
-    flow: null,
-    ssoSignupToken: getInitialSsoToken(),
-    ssoSignupData: getInitialSsoData(),
-
-    setSignupFlow: (flow) => set({ flow }),
-
-    setAgreementUserId: (userId) =>
-      set((state) => {
-        const agreements = { ...state.agreements, userId };
-        writeSessionJSON(SESSION_KEYS.AGREEMENTS, agreements);
-        return { agreements };
-      }),
-
-    setAgreementField: (field, value) =>
-      set((state) => {
-        const agreements = { ...state.agreements, [field]: value } as StoredAgreementState;
-        writeSessionJSON(SESSION_KEYS.AGREEMENTS, agreements);
-        return {
-          agreements,
-          agreementsAcceptedAt: hasAllAgreements(agreements) ? Date.now() : null,
-        };
-      }),
-
-    setAgreements: (agreementsPartial) =>
-      set((state) => {
-        const agreements = {
-          ...state.agreements,
-          ...agreementsPartial,
-        } as StoredAgreementState;
-        writeSessionJSON(SESSION_KEYS.AGREEMENTS, agreements);
-        return {
-          agreements,
-          agreementsAcceptedAt: hasAllAgreements(agreements) ? Date.now() : null,
-        };
-      }),
-
-    setAllAgreements: (value, options) =>
-      set((state) => {
-        const agreements: StoredAgreementState = {
-          userId: options?.userId ?? state.agreements.userId ?? DEFAULT_AGREEMENTS.userId,
-          agreePrivacyUse: value,
-          agreeAgeOver14: value,
-          agreeTerms: value,
-        };
-        writeSessionJSON(SESSION_KEYS.AGREEMENTS, agreements);
-        return {
-          agreements,
-          agreementsAcceptedAt: value ? Date.now() : null,
-        };
-      }),
-
-    clearAgreements: () => {
-      writeSessionJSON(SESSION_KEYS.AGREEMENTS, null);
-      set({ agreements: { ...DEFAULT_AGREEMENTS }, agreementsAcceptedAt: null });
-    },
-
-    hasAcceptedAll: () => hasAllAgreements(get().agreements),
-
-    setSsoSignupContext: (token, data) => {
-      writeSessionValue(SESSION_KEYS.SSO_TOKEN, token);
-      writeSessionJSON(SESSION_KEYS.SSO_DATA, data);
-      set({
-        ssoSignupToken: token ?? null,
-        ssoSignupData: data ?? null,
-        flow: token ? "SSO" : get().flow,
-      });
-    },
-
-    clearSsoSignupContext: () => {
-      writeSessionValue(SESSION_KEYS.SSO_TOKEN, null);
-      writeSessionJSON(SESSION_KEYS.SSO_DATA, null);
-      set({ ssoSignupToken: null, ssoSignupData: null });
-    },
-
-    resetSignup: () => {
-      writeSessionJSON(SESSION_KEYS.AGREEMENTS, null);
-      writeSessionValue(SESSION_KEYS.SSO_TOKEN, null);
-      writeSessionJSON(SESSION_KEYS.SSO_DATA, null);
-      set({
-        agreements: { ...DEFAULT_AGREEMENTS },
-        agreementsAcceptedAt: null,
-        flow: null,
-        ssoSignupToken: null,
-        ssoSignupData: null,
-      });
-    },
-  };
-});
+  // 최종 제출 데이터(users + user_agreements)
+  buildPayload: () => ({
+    user: get().userInfo,
+    agreements: get().agreements,
+  }),
+}));
