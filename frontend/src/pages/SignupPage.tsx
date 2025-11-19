@@ -11,12 +11,7 @@ import { ROLES } from "../../../shared/constants";
 import { useSignupStore } from "../store/signupStore";
 
 const SignupPage: React.FC = () => {
-  const agreements = useSignupStore((state) => state.agreements);
-  const userInfo = useSignupStore((state) => state.userInfo);
-  const setUserInfo = useSignupStore((state) => state.setUserInfo);
-  const setAgreementsStore = useSignupStore((state) => state.setAgreements);
-  const loadSocialUserInfo = useSignupStore((state) => state.loadSocialUserInfo);
-  const resetSignupStore = useSignupStore((state) => state.reset);
+  const { agreements, userInfo, nextStep, setUserInfo, loadSocialUserInfo, reset, buildPayload } = useSignupStore();
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof SignupFormData | "passwordConfirm", string>>>({});
   const [isSsoSignup, setIsSsoSignup] = useState(false);
@@ -42,37 +37,10 @@ const SignupPage: React.FC = () => {
 
   const hasAcceptedAllAgreements = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
 
-  // 동의 정보 검증 및 SSO 회원가입 정보 처리
   useEffect(() => {
-    const agreementReady = () => {
-      if (hasAcceptedAllAgreements) {
-        return true;
-      }
-
-      const agreementData = sessionStorage.getItem("signupAgreements");
-      if (!agreementData) {
-        toast.error("약관 동의가 필요합니다.");
-        navigate("/agreement", { replace: true });
-        return false;
-      }
-
-      try {
-        const parsed = JSON.parse(agreementData);
-        setAgreementsStore({
-          agreePrivacyUse: parsed.agreePrivacyUse,
-          agreeAgeOver14: parsed.agreeAgeOver14,
-          agreeTerms: parsed.agreeTerms,
-        });
-        return true;
-      } catch (error) {
-        console.error("약관 정보 파싱 오류:", error);
-        toast.error("약관 정보를 불러오지 못했습니다.");
-        navigate("/agreement", { replace: true });
-        return false;
-      }
-    };
-
-    if (!agreementReady()) {
+    if (!hasAcceptedAllAgreements) {
+      toast.error("약관 동의가 필요합니다.");
+      navigate("/agreement", { replace: true });
       return;
     }
 
@@ -113,7 +81,7 @@ const SignupPage: React.FC = () => {
 
     setIsSsoSignup(false);
     setSignupToken(null);
-  }, [hasAcceptedAllAgreements, loadSocialUserInfo, locationState, navigate, setAgreementsStore]);
+  }, [hasAcceptedAllAgreements, loadSocialUserInfo, locationState, navigate]);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -281,19 +249,6 @@ const SignupPage: React.FC = () => {
     }
 
     try {
-      // sessionStorage에서 동의 정보 가져오기
-      const agreementDataStr = sessionStorage.getItem("signupAgreements");
-      if (!agreementDataStr) {
-        toast.error("약관 동의 정보가 없습니다.");
-        navigate("/agreement", { replace: true });
-        return;
-      }
-
-      const agreementData = JSON.parse(agreementDataStr);
-      // userId 필드는 제거 (백엔드에서 처리)
-      const { userId: _ignoredUserId, ...agreements } = agreementData;
-      void _ignoredUserId;
-
       const payload = {
         ...userInfo,
         agreements, // 동의 정보 포함
@@ -304,10 +259,9 @@ const SignupPage: React.FC = () => {
       await api.post("/user/signup", payload);
 
       // 회원가입 성공 시 sessionStorage 정리
-      sessionStorage.removeItem("signupAgreements");
       sessionStorage.removeItem("ssoSignupToken");
       sessionStorage.removeItem("ssoSignupData");
-      resetSignupStore();
+      reset();
       setPasswordConfirm("");
       setSelectedStore(null);
       setIsSsoSignup(false);
