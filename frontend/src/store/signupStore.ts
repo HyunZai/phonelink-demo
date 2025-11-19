@@ -3,6 +3,8 @@ import { ROLES } from "../../../shared/constants";
 import type { SignupUserInfo, AgreementState, FinalSignupPayload } from "../../../shared/user_v2.types";
 
 interface SignupStoreState {
+  isSsoSignup: boolean;
+
   // 1단계: 약관 동의
   agreements: AgreementState;
 
@@ -13,8 +15,8 @@ interface SignupStoreState {
   currentStep: number; // 1: 동의 → 2: 정보 입력
 
   // 액션
+  setIsSsoSignup: (value: boolean) => void;
   setAgreement: (key: keyof AgreementState, value: boolean) => void;
-  setAgreements: (next: Partial<AgreementState>) => void;
   setUserInfo: (key: keyof SignupUserInfo, value: any) => void;
   loadSocialUserInfo: (data: Partial<SignupUserInfo>) => void;
   nextStep: () => void;
@@ -26,6 +28,8 @@ interface SignupStoreState {
 
 export const useSignupStore = create<SignupStoreState>((set, get) => ({
   // 초기값
+  isSsoSignup: false,
+
   agreements: {
     agreePrivacyUse: false,
     agreeAgeOver14: false,
@@ -54,6 +58,11 @@ export const useSignupStore = create<SignupStoreState>((set, get) => ({
   },
 
   currentStep: 1,
+
+  setIsSsoSignup: (value: boolean) =>
+    set({
+      isSsoSignup: value,
+    }),
 
   // 동의항목 업데이트
   setAgreement: (key, value) =>

@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoCheckmarkCircle, IoCheckmarkCircleOutline } from "react-icons/io5";
-import type { UserAgreementCreateData } from "../../../shared/userAgreement.types";
 import type { AgreementState } from "../../../shared/user_v2.types";
 import { useSignupStore } from "../store/signupStore";
 
@@ -35,18 +34,6 @@ const AgreementPage: React.FC = () => {
     if (!allChecked) {
       return;
     }
-
-    // TODO: signupStore로 리팩토링 후 삭제요망
-    // 동의 정보를 sessionStorage에 저장
-    const agreementData: UserAgreementCreateData = {
-      userId: 0, // 회원가입 시 실제 userId로 교체됨
-      agreePrivacyUse: agreements.agreePrivacyUse,
-      agreeAgeOver14: agreements.agreeAgeOver14,
-      agreeTerms: agreements.agreeTerms,
-    };
-
-    sessionStorage.setItem("signupAgreements", JSON.stringify(agreementData));
-    //////////////////////////////////////
 
     // 회원가입 페이지로 이동
     // SSO 회원가입인 경우 signupToken과 ssoData는 이미 sessionStorage에 저장되어 있음
