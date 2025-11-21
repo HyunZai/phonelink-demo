@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ROLES } from "../../../shared/constants";
-import type { SignupUserInfo, AgreementState, FinalSignupPayload } from "../../../shared/user_v2.types";
+import type { SignupUserInfo, AgreementState } from "../../../shared/user_v2.types";
 
 interface SignupStoreState {
   isSsoSignup: boolean;
@@ -21,9 +21,6 @@ interface SignupStoreState {
   loadSocialUserInfo: (data: Partial<SignupUserInfo>) => void;
   nextStep: () => void;
   reset: () => void;
-
-  // 최종 제출 페이로드 생성
-  buildPayload: () => FinalSignupPayload;
 }
 
 export const useSignupStore = create<SignupStoreState>((set, get) => ({
@@ -70,14 +67,6 @@ export const useSignupStore = create<SignupStoreState>((set, get) => ({
       agreements: {
         ...state.agreements,
         [key]: value,
-      },
-    })),
-
-  setAgreements: (next) =>
-    set((state) => ({
-      agreements: {
-        ...state.agreements,
-        ...next,
       },
     })),
 
@@ -137,10 +126,4 @@ export const useSignupStore = create<SignupStoreState>((set, get) => ({
       },
       currentStep: 1,
     }),
-
-  // 최종 제출 데이터(users + user_agreements)
-  buildPayload: () => ({
-    user: get().userInfo,
-    agreements: get().agreements,
-  }),
 }));
