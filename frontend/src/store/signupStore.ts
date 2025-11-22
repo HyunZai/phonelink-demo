@@ -23,7 +23,7 @@ interface SignupStoreState {
   reset: () => void;
 }
 
-export const useSignupStore = create<SignupStoreState>((set, get) => ({
+export const useSignupStore = create<SignupStoreState>((set) => ({
   // 초기값
   isSsoSignup: false,
 

@@ -11,7 +11,7 @@ import { ROLES } from "../../../shared/constants";
 import { useSignupStore } from "../store/signupStore";
 
 const SignupPage: React.FC = () => {
-  const { agreements, userInfo, nextStep, setUserInfo, loadSocialUserInfo, reset, buildPayload } = useSignupStore();
+  const { agreements, userInfo, nextStep, setUserInfo, loadSocialUserInfo, reset } = useSignupStore();
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof SignupFormData | "passwordConfirm", string>>>({});
   const [isSsoSignup, setIsSsoSignup] = useState(false);
