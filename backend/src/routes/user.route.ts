@@ -5,11 +5,12 @@ import { AppDataSource } from "../db";
 import { User } from "../typeorm/users.entity";
 import { SocialAccount } from "../typeorm/socialAccounts.entity";
 import { Seller } from "../typeorm/sellers.entity";
-import { SignupFormData, UserUpdateData } from "../../../shared/types";
+import { UserUpdateData } from "../../../shared/types";
 import { nanoid } from "nanoid";
 import { ROLES } from "../../../shared/constants";
 import { Not } from "typeorm";
 import { isAuthenticated, AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { AgreementState, SignupUserInfo } from "shared/user_v2.types";
 
 // 타입을 명확하게 하기 위해 TokenPayload 인터페이스 정의
 interface SsoSignupTokenPayload {
@@ -26,13 +27,28 @@ interface SsoSignupTokenPayload {
 const router = Router();
 
 router.post("/signup", async (req, res) => {
-  const {
-    signupToken, //있으면 SSO 회원가입, 없으면 일반 회원가입
-    storeId,
-    ...signupData
-  }: SignupFormData & { signupToken?: string; storeId?: number } = req.body;
+  const payload = req.body;
+  const signupToken = payload.signupToken;
+  const isSsoSignup: boolean = payload.isSsoSignup;
+  const userInfo: SignupUserInfo = payload.userInfo;
+  const agreements: AgreementState = payload.agreements;
 
-  if (signupToken) {
+  // const {
+  //   signupToken, //있으면 SSO 회원가입, 없으면 일반 회원가입
+  //   storeId,
+  //   ...signupData
+  // }: SignupFormData & { signupToken?: string; storeId?: number } = req.body;
+
+  //TODO: agreements 데이터 db insert 로직 작성
+  if (!agreements) {
+    return res.status(400).json({
+      success: false,
+      message: "약관 동의가 필요합니다.",
+      error: "Agreement data not found",
+    });
+  }
+
+  if (isSsoSignup) {
     // --- SSO 회원가입 ---
     try {
       const decoded = jwt.verify(
@@ -61,7 +77,7 @@ router.post("/signup", async (req, res) => {
           throw new Error("EMAIL_ALREADY_EXISTS");
         }
 
-        const finalPhoneNumber = signupData.phoneNumber || decoded.phoneNumber;
+        const finalPhoneNumber = userInfo.phoneNumber || decoded.phoneNumber;
         if (finalPhoneNumber) {
           const existingUserByPhone = await transactionalEntityManager.findOne(User, {
             where: { phoneNumber: finalPhoneNumber },
@@ -95,11 +111,11 @@ router.post("/signup", async (req, res) => {
         newUser.nickname = generatedNickname;
 
         // SSO 정보 + 사용자가 추가 입력한 정보
-        newUser.gender = signupData.gender || decoded.gender;
+        newUser.gender = userInfo.gender || decoded.gender;
         newUser.phoneNumber = finalPhoneNumber;
 
         // 생년월일 및 연령대 처리
-        const birthDate = signupData.birthday; // YYYY-MM-DD
+        const birthDate = userInfo.birthday; // YYYY-MM-DD
         if (birthDate) {
           const birthYear = Number(birthDate.split("-")[0]);
           newUser.birthYear = birthYear;
@@ -124,24 +140,24 @@ router.post("/signup", async (req, res) => {
           }
         }
 
-        newUser.role = signupData.role;
-        newUser.address = signupData.address;
-        newUser.addressDetail = signupData.addressDetail;
-        newUser.postalCode = signupData.postalCode;
-        newUser.sido = signupData.sido;
-        newUser.sigungu = signupData.sigungu;
+        newUser.role = userInfo.role;
+        newUser.address = userInfo.address;
+        newUser.addressDetail = userInfo.addressDetail;
+        newUser.postalCode = userInfo.postalCode;
+        newUser.sido = userInfo.sido;
+        newUser.sigungu = userInfo.sigungu;
         // SSO 가입 시 password는 null
 
         const savedUser = await transactionalEntityManager.save(newUser);
 
         // 판매자일 경우 sellers 테이블에 추가
-        if (savedUser.role === ROLES.SELLER && storeId !== -8574) {
-          if (!storeId) {
+        if (savedUser.role === ROLES.SELLER && userInfo.storeId !== -8574) {
+          if (!userInfo.storeId) {
             throw new Error("STORE_ID_REQUIRED");
           }
           const newSeller = new Seller();
           newSeller.userId = savedUser.id;
-          newSeller.storeId = storeId;
+          newSeller.storeId = userInfo.storeId;
           newSeller.status = "PENDING";
           await transactionalEntityManager.save(newSeller);
         }
@@ -211,16 +227,16 @@ router.post("/signup", async (req, res) => {
 
         // 1. 이메일 중복 확인
         const existingUserByEmail = await userRepo.findOne({
-          where: { email: signupData.email },
+          where: { email: userInfo.email },
         });
         if (existingUserByEmail) {
           throw new Error("EMAIL_ALREADY_EXISTS");
         }
 
         // 2. 전화번호 중복 확인 (입력된 경우)
-        if (signupData.phoneNumber) {
+        if (userInfo.phoneNumber) {
           const existingUserByPhone = await userRepo.findOne({
-            where: { phoneNumber: signupData.phoneNumber },
+            where: { phoneNumber: userInfo.phoneNumber },
           });
           if (existingUserByPhone) {
             throw new Error("PHONE_ALREADY_EXISTS");
@@ -228,16 +244,16 @@ router.post("/signup", async (req, res) => {
         }
 
         // 3. 비밀번호 해싱
-        if (!signupData.password) {
+        if (!userInfo.password) {
           throw new Error("PASSWORD_REQUIRED");
         }
-        const hashedPassword = await bcrypt.hash(signupData.password, 10);
+        const hashedPassword = await bcrypt.hash(userInfo.password, 10);
 
         // 4. 새로운 사용자 생성
         const newUser = new User();
-        newUser.email = signupData.email;
+        newUser.email = userInfo.email;
         newUser.password = hashedPassword;
-        newUser.name = signupData.name;
+        newUser.name = userInfo.name;
 
         // 닉네임 자동 생성 (user_{nanoid}) - 중복 확인 포함
         let isNicknameUnique = false;
@@ -256,9 +272,9 @@ router.post("/signup", async (req, res) => {
         newUser.nickname = generatedNickname;
 
         // 선택 정보
-        newUser.gender = signupData.gender;
-        newUser.phoneNumber = signupData.phoneNumber;
-        const birthDate = signupData.birthday; // YYYY-MM-DD
+        newUser.gender = userInfo.gender == "" ? undefined : userInfo.gender;
+        newUser.phoneNumber = userInfo.phoneNumber;
+        const birthDate = userInfo.birthday; // YYYY-MM-DD
         if (birthDate) {
           const birthYear = Number(birthDate.split("-")[0]);
           newUser.birthYear = birthYear;
@@ -271,24 +287,24 @@ router.post("/signup", async (req, res) => {
             newUser.ageRange = `${startOfRange}-${startOfRange + 9}`;
           }
         }
-        newUser.role = signupData.role;
-        newUser.address = signupData.address;
-        newUser.addressDetail = signupData.addressDetail;
-        newUser.postalCode = signupData.postalCode;
-        newUser.sido = signupData.sido;
-        newUser.sigungu = signupData.sigungu;
+        newUser.role = userInfo.role;
+        newUser.address = userInfo.address;
+        newUser.addressDetail = userInfo.addressDetail;
+        newUser.postalCode = userInfo.postalCode;
+        newUser.sido = userInfo.sido;
+        newUser.sigungu = userInfo.sigungu;
 
         const savedUser = await userRepo.save(newUser);
 
         // 판매자일 경우 sellers 테이블에 추가
-        if (savedUser.role === ROLES.SELLER && storeId !== -8574) {
-          if (!storeId) {
+        if (savedUser.role === ROLES.SELLER && userInfo.storeId !== -8574) {
+          if (!userInfo.storeId) {
             throw new Error("STORE_ID_REQUIRED");
           }
           const sellerRepo = transactionalEntityManager.getRepository(Seller);
           const newSeller = new Seller();
           newSeller.userId = savedUser.id;
-          newSeller.storeId = storeId;
+          newSeller.storeId = userInfo.storeId;
           await sellerRepo.save(newSeller);
         }
       });
