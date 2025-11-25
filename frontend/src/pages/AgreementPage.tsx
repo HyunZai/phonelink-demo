@@ -6,20 +6,16 @@ import { useSignupStore } from "../store/signupStore";
 
 const AgreementPage: React.FC = () => {
   const navigate = useNavigate();
-  const { agreements, setAgreement, nextStep, setAgreements } = useSignupStore();
-
-  useEffect(() => {
-    setAgreements({
-      agreePrivacyUse: false,
-      agreeAgeOver14: false,
-      agreeTerms: false,
-    });
-  }, [setAgreements]);
+  const { agreements, setAgreement } = useSignupStore();
 
   type AgreementKey = keyof AgreementState;
   const agreementKeys: AgreementKey[] = ["agreeAgeOver14", "agreePrivacyUse", "agreeTerms"];
-
   const allChecked = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
+
+  //해당 페이지 진입 시, 동의 데이터 초기화
+  useEffect(() => {
+    agreementKeys.forEach((key) => setAgreement(key, false));
+  }, []);
 
   const handleAllAgree = () => {
     const newValue = !allChecked;
@@ -37,7 +33,6 @@ const AgreementPage: React.FC = () => {
 
     // 회원가입 페이지로 이동
     // SSO 회원가입인 경우 signupToken과 ssoData는 이미 sessionStorage에 저장되어 있음
-    nextStep();
     navigate("/signup");
   };
 

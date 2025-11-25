@@ -11,19 +11,16 @@ interface SignupStoreState {
   // 2단계: 기본 회원정보
   userInfo: SignupUserInfo;
 
-  // 흐름 제어
-  currentStep: number; // 1: 동의 → 2: 정보 입력
-
   // 액션
   setIsSsoSignup: (value: boolean) => void;
   setAgreement: (key: keyof AgreementState, value: boolean) => void;
   setUserInfo: (key: keyof SignupUserInfo, value: any) => void;
   loadSocialUserInfo: (data: Partial<SignupUserInfo>) => void;
-  nextStep: () => void;
   reset: () => void;
+  printState: () => void;
 }
 
-export const useSignupStore = create<SignupStoreState>((set) => ({
+export const useSignupStore = create<SignupStoreState>((set, get) => ({
   // 초기값
   isSsoSignup: false,
 
@@ -53,8 +50,6 @@ export const useSignupStore = create<SignupStoreState>((set) => ({
     lastLoginType: "",
     storeId: undefined,
   },
-
-  currentStep: 1,
 
   setIsSsoSignup: (value: boolean) =>
     set({
@@ -90,12 +85,6 @@ export const useSignupStore = create<SignupStoreState>((set) => ({
       },
     })),
 
-  // 단계 이동
-  nextStep: () =>
-    set((state) => ({
-      currentStep: Math.min(state.currentStep + 1, 2),
-    })),
-
   // 전부 초기화
   reset: () =>
     set({
@@ -124,6 +113,16 @@ export const useSignupStore = create<SignupStoreState>((set) => ({
         lastLoginType: "",
         storeId: undefined,
       },
-      currentStep: 1,
     }),
+  // 디버깅용: 현재 상태 출력
+  printState: () => {
+    const state = get();
+    console.log("===========================");
+    console.log("SignupStore state", {
+      isSsoSignup: state.isSsoSignup,
+      agreements: state.agreements,
+      userInfo: state.userInfo,
+    });
+    console.log("===========================");
+  },
 }));
