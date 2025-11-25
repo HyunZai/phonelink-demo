@@ -11,10 +11,11 @@ import { ROLES } from "../../../shared/constants";
 import { useSignupStore } from "../store/signupStore";
 
 const SignupPage: React.FC = () => {
-  const { agreements, userInfo, nextStep, setUserInfo, loadSocialUserInfo, reset } = useSignupStore();
+  const { isSsoSignup, agreements, userInfo, setIsSsoSignup, setUserInfo, loadSocialUserInfo, reset, printState } =
+    useSignupStore();
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof SignupFormData | "passwordConfirm", string>>>({});
-  const [isSsoSignup, setIsSsoSignup] = useState(false);
+
   const [signupToken, setSignupToken] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreDto | null>(null);
   const [stores, setStores] = useState<StoreDto[]>([]); // 대리점 목록 상태 추가
@@ -37,9 +38,9 @@ const SignupPage: React.FC = () => {
 
   const hasAcceptedAllAgreements = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
 
-  useEffect(() => {
+  const setSsoDataAndToken = () => {
     if (!hasAcceptedAllAgreements) {
-      toast.error("약관 동의가 필요합니다.");
+      toast.error("약관 동의가 필요합니다!!!!!!!!!!!!");
       navigate("/agreement", { replace: true });
       return;
     }
@@ -81,9 +82,11 @@ const SignupPage: React.FC = () => {
 
     setIsSsoSignup(false);
     setSignupToken(null);
-  }, [hasAcceptedAllAgreements, loadSocialUserInfo, locationState, navigate]);
+  };
 
   useEffect(() => {
+    if (isSsoSignup) setSsoDataAndToken();
+
     const fetchStores = async () => {
       try {
         const storesData = await api.get<StoreDto[]>("/store/stores");
@@ -193,6 +196,8 @@ const SignupPage: React.FC = () => {
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    printState();
+
     const newErrors: Partial<Record<keyof SignupFormData | "passwordConfirm", string>> = {};
     let formIsValid = true;
 
@@ -205,11 +210,7 @@ const SignupPage: React.FC = () => {
       newErrors.gender = "성별을 선택해주세요.";
       formIsValid = false;
     }
-    // 생년월일은 선택 사항
-    // if (!userInfo.birthday) {
-    //   newErrors.birthday = "생년월일을 입력해주세요.";
-    //   formIsValid = false;
-    // }
+
     // 전화번호는 필수 사항, 입력 시 형식 검사
     if (!userInfo.phoneNumber) {
       newErrors.phoneNumber = "전화번호를 입력해주세요.";
