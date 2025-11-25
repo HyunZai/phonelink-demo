@@ -11,7 +11,7 @@ import { ROLES } from "../../../shared/constants";
 import { useSignupStore } from "../store/signupStore";
 
 const SignupPage: React.FC = () => {
-  const { isSsoSignup, agreements, userInfo, setIsSsoSignup, setUserInfo, loadSocialUserInfo, reset, printState } =
+  const { isSsoSignup, agreements, userInfo, setIsSsoSignup, setUserInfo, loadSocialUserInfo, reset } =
     useSignupStore();
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof SignupFormData | "passwordConfirm", string>>>({});
@@ -196,8 +196,6 @@ const SignupPage: React.FC = () => {
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    printState();
-
     const newErrors: Partial<Record<keyof SignupFormData | "passwordConfirm", string>> = {};
     let formIsValid = true;
 
@@ -251,11 +249,14 @@ const SignupPage: React.FC = () => {
 
     try {
       const payload = {
-        ...userInfo,
-        agreements, // 동의 정보 포함
+        isSsoSignup: isSsoSignup,
+        userInfo: userInfo,
+        agreements: agreements,
         ...(isSsoSignup && { signupToken }),
         ...(userInfo.role === ROLES.SELLER && { storeId: selectedStore?.id }),
       };
+
+      console.log(payload);
 
       await api.post("/user/signup", payload);
 
