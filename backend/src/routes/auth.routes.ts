@@ -25,6 +25,7 @@ interface UserProfile {
   sso_id: string;
   name: string;
   email: string;
+  nickname?: string;
   phone_number?: string;
   birthyear?: string;
   birthday?: string;
@@ -459,6 +460,7 @@ router.post("/callback/:provider", async (req, res) => {
         providerUserId: userProfile.sso_id,
         email: userProfile.email,
         name: userProfile.name,
+        nickname: userProfile.nickname,
         gender: userProfile.gender,
         phoneNumber: userProfile.phone_number,
         birthYear: userProfile.birthyear,
@@ -862,6 +864,7 @@ async function getNaverUserProfile(code: string): Promise<UserProfile | null> {
         sso_id: naverProfile.id,
         name: naverProfile.name,
         email: naverProfile.email,
+        nickname: naverProfile.nickname || null,
         phone_number: naverProfile.mobile,
         birthyear: naverProfile.birthyear,
         birthday: naverProfile.birthday,
