@@ -40,7 +40,7 @@ const SignupPage: React.FC = () => {
 
   const setSsoDataAndToken = () => {
     if (!isAcceptedAllAgreements) {
-      toast.error("약관 동의가 필요합니다!!!!!!!!!!!!");
+      toast.error("약관 동의가 필요합니다.");
       navigate("/agreement", { replace: true });
       return;
     }
@@ -52,6 +52,7 @@ const SignupPage: React.FC = () => {
         email: rawData?.email || "",
         name: rawData?.name || "",
         gender: rawData?.gender || "M",
+        nickname: rawData?.nickname || "",
         phoneNumber: rawData?.phoneNumber?.replace("+82 ", "0") || "",
         birthday: birthdate,
         provider: rawData?.provider || "local",
@@ -84,7 +85,10 @@ const SignupPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isSsoSignup) setSsoDataAndToken();
+    if (sessionStorage.getItem("ssoSignupToken") !== null && sessionStorage.getItem("ssoSignupData") !== null) {
+      setIsSsoSignup(true);
+      setSsoDataAndToken();
+    }
 
     const fetchStores = async () => {
       try {

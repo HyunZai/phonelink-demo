@@ -29,10 +29,11 @@ const router = Router();
 
 router.post("/signup", async (req, res) => {
   const payload = req.body;
-  const signupToken = payload.signupToken;
   const isSsoSignup: boolean = payload.isSsoSignup;
   const userInfo: SignupUserInfo = payload.userInfo;
   const agreements: AgreementState = payload.agreements;
+  const signupToken = payload.signupToken;
+  //const storeId = payload.storeId;
 
   const isAcceptedAllAgreements = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
 
@@ -62,11 +63,25 @@ router.post("/signup", async (req, res) => {
       if (existingSocialAccount) throw new Error("ALREADY_LINKED_ACCOUNT");
     }
 
+    const userRepo = AppDataSource.getRepository(User);
+
+    // users table에서 이메일 중복 확인
+    const existingUserByEmail = await userRepo.findOne({
+      where: { email: userInfo.email },
+    });
+    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_EXISTS");
+
+    // users table에서 전화번호 중복 확인
+    const existingUserByPhone = await userRepo.findOne({
+      where: { phoneNumber: userInfo.phoneNumber },
+    });
+    if (existingUserByPhone) throw new Error("PHONE_ALREADY_EXISTS");
+
     //TODO: 여기서 users 테이블 데이터 생성 및 insert
     //아래 코드 리팩토링해서 작성해라. 넘무 복잡하다.
 
     // 1. [ SSO 회원가입 ]
-    // 1-1. Signup token 유효성 체크 ✅
+    // 1-1. Signup token 유효성 체크 ✅ (완)
     // 1-2. DB에 사용자 정보 중복 체크(SocialAccount table + users.email, users.phone_number)
     // 1-3. new user data 생성(랜덤 닉네임 생성, 생년월일 및 연령대 가공)
     // 1-4. new user data insert
@@ -80,6 +95,14 @@ router.post("/signup", async (req, res) => {
     // 2-4. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
 
     const newUser = new User();
+    newUser.email = userInfo.email;
+    newUser.name = userInfo.name;
+    newUser.role = userInfo.role;
+    if (!isSsoSignup) newUser.password = userInfo.password;
+    newUser.nickname = userInfo.nickname;
+    newUser.phoneNumber = userInfo.phoneNumber;
+    newUser.gender = userInfo.gender || undefined;
+
     const savedUser = await transactionalEntityManager.save(newUser);
 
     // 위에서 생성된 new user의 agreement data insert
@@ -110,16 +133,6 @@ router.post("/signup", async (req, res) => {
 
       await AppDataSource.transaction(async (transactionalEntityManager) => {
         // 1. 소셜 계정 정보가 이미 DB에 있는지 확인
-        const existingSocialAccount = await transactionalEntityManager.findOne(SocialAccount, {
-          where: {
-            provider: decoded.provider,
-            providerUserId: decoded.providerUserId,
-          },
-        });
-
-        if (existingSocialAccount) {
-          throw new Error("ALREADY_LINKED_ACCOUNT");
-        }
 
         const userRepo = AppDataSource.getRepository(User);
 
@@ -138,9 +151,7 @@ router.post("/signup", async (req, res) => {
             where: { nickname: generatedNickname },
           });
 
-          if (!existingNickname) {
-            isNicknameUnique = true;
-          }
+          if (!existingNickname) isNicknameUnique = true;
         }
         newUser.nickname = generatedNickname;
 
