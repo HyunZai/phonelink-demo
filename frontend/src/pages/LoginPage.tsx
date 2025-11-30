@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { ssoConfig } from "../config/sso-config";
 import Swal from "sweetalert2";
 import { useTheme } from "../hooks/useTheme";
-
+import { useSignupStore } from "../store/signupStore";
 import appleLogo from "../assets/images/apple.png";
 import googleLogo from "../assets/images/google.png";
 import kakaoLogo from "../assets/images/kakao.png";
@@ -31,6 +31,8 @@ const LoginPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const { theme } = useTheme();
+
+  const { setIsSsoSignup } = useSignupStore();
 
   // 미입력 시 포커스를 주기 위한 ref
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -185,6 +187,7 @@ const LoginPage: React.FC = () => {
   };
 
   const handleSsoLogin = async (provider: SsoProvider) => {
+    setIsSsoSignup(true);
     if (provider === SSO_PROVIDERS.NAVER) {
       const { clientId, redirectUri, authUrl } = ssoConfig.naver;
       const state = getState();

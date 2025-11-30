@@ -36,10 +36,10 @@ const SignupPage: React.FC = () => {
     }
   }, [selectedStore, setUserInfo, userInfo.role]);
 
-  const hasAcceptedAllAgreements = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
+  const isAcceptedAllAgreements = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
 
   const setSsoDataAndToken = () => {
-    if (!hasAcceptedAllAgreements) {
+    if (!isAcceptedAllAgreements) {
       toast.error("약관 동의가 필요합니다!!!!!!!!!!!!");
       navigate("/agreement", { replace: true });
       return;
@@ -56,7 +56,6 @@ const SignupPage: React.FC = () => {
         birthday: birthdate,
         provider: rawData?.provider || "local",
       });
-      setIsSsoSignup(true);
       setSignupToken(token);
     };
 
