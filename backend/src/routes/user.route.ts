@@ -11,6 +11,7 @@ import { ROLES } from "../../../shared/constants";
 import { Not } from "typeorm";
 import { isAuthenticated, AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { AgreementState, SignupUserInfo } from "shared/user_v2.types";
+import { UserAgreement } from "../typeorm/userAgreements.entity";
 
 // 타입을 명확하게 하기 위해 TokenPayload 인터페이스 정의
 interface SsoSignupTokenPayload {
@@ -33,20 +34,71 @@ router.post("/signup", async (req, res) => {
   const userInfo: SignupUserInfo = payload.userInfo;
   const agreements: AgreementState = payload.agreements;
 
-  // const {
-  //   signupToken, //있으면 SSO 회원가입, 없으면 일반 회원가입
-  //   storeId,
-  //   ...signupData
-  // }: SignupFormData & { signupToken?: string; storeId?: number } = req.body;
+  const isAcceptedAllAgreements = agreements.agreePrivacyUse && agreements.agreeAgeOver14 && agreements.agreeTerms;
 
-  //TODO: agreements 데이터 db insert 로직 작성
-  if (!agreements) {
+  if (!agreements || !isAcceptedAllAgreements) {
     return res.status(400).json({
       success: false,
       message: "약관 동의가 필요합니다.",
       error: "Agreement data not found",
     });
   }
+
+  await AppDataSource.transaction(async (transactionalEntityManager) => {
+    // SSO 회원가입일 때, SocialAccount table data 중복 확인
+    if (isSsoSignup) {
+      const decoded = jwt.verify(
+        signupToken,
+        process.env.JWT_SIGNUP_SECRET || "default_signup_secret",
+      ) as SsoSignupTokenPayload;
+
+      const existingSocialAccount = await transactionalEntityManager.findOne(SocialAccount, {
+        where: {
+          provider: decoded.provider,
+          providerUserId: decoded.providerUserId,
+        },
+      });
+
+      if (existingSocialAccount) throw new Error("ALREADY_LINKED_ACCOUNT");
+    }
+
+    //TODO: 여기서 users 테이블 데이터 생성 및 insert
+    //아래 코드 리팩토링해서 작성해라. 넘무 복잡하다.
+
+    // 1. [ SSO 회원가입 ]
+    // 1-1. Signup token 유효성 체크 ✅
+    // 1-2. DB에 사용자 정보 중복 체크(SocialAccount table + users.email, users.phone_number)
+    // 1-3. new user data 생성(랜덤 닉네임 생성, 생년월일 및 연령대 가공)
+    // 1-4. new user data insert
+    // 1-5. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
+    // 1-6. SocialAccount 테이블 데이터 삽입 ✅
+
+    // 2. [ 일반 회원가입 ]
+    // 2-1. DB에 사용자 정보 중복 체크(users.email, users.phone_number)
+    // 2-2. new user data 생성(랜덤 닉네임 생성, 생년월일 및 연령대 가공)
+    // 2-3. new user data insert
+    // 2-4. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
+
+    const newUser = new User();
+    const savedUser = await transactionalEntityManager.save(newUser);
+
+    // 위에서 생성된 new user의 agreement data insert
+    const agreementRepo = AppDataSource.getRepository(UserAgreement);
+    const newAgreement = agreementRepo.create({
+      userId: savedUser.id,
+      agreePrivacyUse: agreements.agreePrivacyUse,
+      agreeAgeOver14: agreements.agreeAgeOver14,
+      agreeTerms: agreements.agreeTerms,
+    });
+
+    //const savedAgreement = await agreementRepo.save(newAgreement);
+    await agreementRepo.save(newAgreement);
+
+    res.status(201).json({
+      success: true,
+      message: "회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.",
+    });
+  });
 
   if (isSsoSignup) {
     // --- SSO 회원가입 ---
@@ -67,24 +119,6 @@ router.post("/signup", async (req, res) => {
 
         if (existingSocialAccount) {
           throw new Error("ALREADY_LINKED_ACCOUNT");
-        }
-
-        // 2. 이메일 및 전화번호 중복 확인
-        const existingUserByEmail = await transactionalEntityManager.findOne(User, {
-          where: { email: decoded.email },
-        });
-        if (existingUserByEmail) {
-          throw new Error("EMAIL_ALREADY_EXISTS");
-        }
-
-        const finalPhoneNumber = userInfo.phoneNumber || decoded.phoneNumber;
-        if (finalPhoneNumber) {
-          const existingUserByPhone = await transactionalEntityManager.findOne(User, {
-            where: { phoneNumber: finalPhoneNumber },
-          });
-          if (existingUserByPhone) {
-            throw new Error("PHONE_ALREADY_EXISTS");
-          }
         }
 
         const userRepo = AppDataSource.getRepository(User);
@@ -112,7 +146,7 @@ router.post("/signup", async (req, res) => {
 
         // SSO 정보 + 사용자가 추가 입력한 정보
         newUser.gender = userInfo.gender || decoded.gender;
-        newUser.phoneNumber = finalPhoneNumber;
+        //newUser.phoneNumber = finalPhoneNumber;
 
         // 생년월일 및 연령대 처리
         const birthDate = userInfo.birthday; // YYYY-MM-DD
