@@ -89,7 +89,7 @@ router.post("/signup", async (req, res) => {
     // 1-6. SocialAccount 테이블 데이터 삽입 ✅
 
     // 2. [ 일반 회원가입 ]
-    // 2-1. DB에 사용자 정보 중복 체크(users.email, users.phone_number)
+    // 2-1. DB에 사용자 정보 중복 체크(users.email, users.phone_number) (완)
     // 2-2. new user data 생성(랜덤 닉네임 생성, 생년월일 및 연령대 가공)
     // 2-3. new user data insert
     // 2-4. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
