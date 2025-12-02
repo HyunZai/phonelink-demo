@@ -82,7 +82,7 @@ router.post("/signup", async (req, res) => {
 
     // 1. [ SSO 회원가입 ]
     // 1-1. Signup token 유효성 체크 ✅ (완)
-    // 1-2. DB에 사용자 정보 중복 체크(SocialAccount table + users.email, users.phone_number)
+    // 1-2. DB에 사용자 정보 중복 체크(SocialAccount table + users.email, users.phone_number) (완)
     // 1-3. new user data 생성(랜덤 닉네임 생성, 생년월일 및 연령대 가공)
     // 1-4. new user data insert
     // 1-5. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
