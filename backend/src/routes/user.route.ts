@@ -78,7 +78,6 @@ router.post("/signup", async (req, res) => {
     if (existingUserByPhone) throw new Error("PHONE_ALREADY_EXISTS");
 
     //TODO: 여기서 users 테이블 데이터 생성 및 insert
-    //아래 코드 리팩토링해서 작성해라. 넘무 복잡하다.
 
     // 1. [ SSO 회원가입 ]
     // 1-1. Signup token 유효성 체크 ✅ (완)
