@@ -94,6 +94,7 @@ router.post("/signup", async (req, res) => {
     // 2-4. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
 
     const newUser = new User();
+
     newUser.email = userInfo.email;
     newUser.name = userInfo.name;
     newUser.role = userInfo.role;
