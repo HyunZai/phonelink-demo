@@ -45,84 +45,6 @@ router.post("/signup", async (req, res) => {
     });
   }
 
-  await AppDataSource.transaction(async (transactionalEntityManager) => {
-    // SSO 회원가입일 때, SocialAccount table data 중복 확인
-    if (isSsoSignup) {
-      const decoded = jwt.verify(
-        signupToken,
-        process.env.JWT_SIGNUP_SECRET || "default_signup_secret",
-      ) as SsoSignupTokenPayload;
-
-      const existingSocialAccount = await transactionalEntityManager.findOne(SocialAccount, {
-        where: {
-          provider: decoded.provider,
-          providerUserId: decoded.providerUserId,
-        },
-      });
-
-      if (existingSocialAccount) throw new Error("ALREADY_LINKED_ACCOUNT");
-    }
-
-    const userRepo = AppDataSource.getRepository(User);
-
-    // users table에서 이메일 중복 확인
-    const existingUserByEmail = await userRepo.findOne({
-      where: { email: userInfo.email },
-    });
-    if (existingUserByEmail) throw new Error("EMAIL_ALREADY_EXISTS");
-
-    // users table에서 전화번호 중복 확인
-    const existingUserByPhone = await userRepo.findOne({
-      where: { phoneNumber: userInfo.phoneNumber },
-    });
-    if (existingUserByPhone) throw new Error("PHONE_ALREADY_EXISTS");
-
-    //TODO: 여기서 users 테이블 데이터 생성 및 insert
-
-    // 1. [ SSO 회원가입 ]
-    // 1-1. Signup token 유효성 체크 ✅ (완)
-    // 1-2. DB에 사용자 정보 중복 체크(SocialAccount table + users.email, users.phone_number) (완)
-    // 1-3. new user data 생성(랜덤 닉네임 생성, 생년월일 및 연령대 가공)
-    // 1-4. new user data insert
-    // 1-5. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
-    // 1-6. SocialAccount 테이블 데이터 삽입 ✅
-
-    // 2. [ 일반 회원가입 ]
-    // 2-1. DB에 사용자 정보 중복 체크(users.email, users.phone_number) (완)
-    // 2-2. new user data 생성(랜덤 닉네임 생성, 생년월일 및 연령대 가공)
-    // 2-3. new user data insert
-    // 2-4. 판매자 role로 가입 시, sellers 테이블 데이터 삽입
-
-    const newUser = new User();
-
-    newUser.email = userInfo.email;
-    newUser.name = userInfo.name;
-    newUser.role = userInfo.role;
-    if (!isSsoSignup) newUser.password = userInfo.password;
-    newUser.nickname = userInfo.nickname;
-    newUser.phoneNumber = userInfo.phoneNumber;
-    newUser.gender = userInfo.gender || undefined;
-
-    const savedUser = await transactionalEntityManager.save(newUser);
-
-    // 위에서 생성된 new user의 agreement data insert
-    const agreementRepo = AppDataSource.getRepository(UserAgreement);
-    const newAgreement = agreementRepo.create({
-      userId: savedUser.id,
-      agreePrivacyUse: agreements.agreePrivacyUse,
-      agreeAgeOver14: agreements.agreeAgeOver14,
-      agreeTerms: agreements.agreeTerms,
-    });
-
-    //const savedAgreement = await agreementRepo.save(newAgreement);
-    await agreementRepo.save(newAgreement);
-
-    res.status(201).json({
-      success: true,
-      message: "회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.",
-    });
-  });
-
   if (isSsoSignup) {
     // --- SSO 회원가입 ---
     try {
@@ -134,7 +56,7 @@ router.post("/signup", async (req, res) => {
       await AppDataSource.transaction(async (transactionalEntityManager) => {
         // 1. 소셜 계정 정보가 이미 DB에 있는지 확인
 
-        const userRepo = AppDataSource.getRepository(User);
+        const userRepo = transactionalEntityManager.getRepository(User);
 
         // 3. Users 테이블에 새로운 사용자 생성
         const newUser = new User();
@@ -214,6 +136,16 @@ router.post("/signup", async (req, res) => {
         newSocialAccount.providerUserId = decoded.providerUserId;
 
         await transactionalEntityManager.save(newSocialAccount);
+
+        // UserAgreement 저장
+        const agreementRepo = transactionalEntityManager.getRepository(UserAgreement);
+        const newAgreement = agreementRepo.create({
+          userId: savedUser.id,
+          agreePrivacyUse: agreements.agreePrivacyUse,
+          agreeAgeOver14: agreements.agreeAgeOver14,
+          agreeTerms: agreements.agreeTerms,
+        });
+        await agreementRepo.save(newAgreement);
       });
 
       res.status(201).json({
@@ -352,6 +284,16 @@ router.post("/signup", async (req, res) => {
           newSeller.storeId = userInfo.storeId;
           await sellerRepo.save(newSeller);
         }
+
+        // UserAgreement 저장
+        const agreementRepo = transactionalEntityManager.getRepository(UserAgreement);
+        const newAgreement = agreementRepo.create({
+          userId: savedUser.id,
+          agreePrivacyUse: agreements.agreePrivacyUse,
+          agreeAgeOver14: agreements.agreeAgeOver14,
+          agreeTerms: agreements.agreeTerms,
+        });
+        await agreementRepo.save(newAgreement);
       });
 
       res.status(201).json({
