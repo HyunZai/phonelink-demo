@@ -45,36 +45,40 @@ const StoreSearchableSelect: React.FC<StoreSearchableSelectProps> = ({
           <HiChevronUpDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
         </Combobox.Button>
 
-        {filteredStores.length > 0 && (
-          <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-background-dark dark:ring-white/10 sm:text-sm">
-            {/* 신규 등록 옵션을 최상단에 배치 */}
-            <Combobox.Option
-              value={newStoreOption}
-              className={({ active }) =>
-                classNames(
-                  "relative cursor-default select-none py-2 pl-3 pr-9 border-b border-background-light dark:border-[#292929]",
-                  active
-                    ? "bg-primary-light text-white dark:bg-primary-dark"
-                    : "text-primary-light dark:text-primary-dark font-medium",
-                )
+        <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-background-dark dark:ring-white/10 sm:text-sm">
+          {/* 신규 등록 옵션을 최상단에 배치 */}
+          <Combobox.Option
+            value={newStoreOption}
+            className={({ active }) =>
+              classNames(
+                "relative cursor-default select-none py-2 pl-3 pr-9 border-b border-background-light dark:border-[#292929]",
+                active
+                  ? "bg-primary-light text-white dark:bg-primary-dark"
+                  : "text-primary-light dark:text-primary-dark font-medium",
+              )
+            }
+            onClick={() => {
+              if (onNewStoreClick) {
+                onNewStoreClick();
               }
-              onClick={() => {
-                if (onNewStoreClick) {
-                  onNewStoreClick();
-                }
-              }}
-            >
-              {() => (
-                <>
-                  <span className="flex items-center">
-                    <HiPlus className="h-4 w-4 mr-2" />
-                    <span className="block truncate">신규 등록 요청</span>
-                  </span>
-                </>
-              )}
-            </Combobox.Option>
+            }}
+          >
+            {() => (
+              <>
+                <span className="flex items-center">
+                  <HiPlus className="h-4 w-4 mr-2" />
+                  <span className="block truncate">신규 등록 요청</span>
+                </span>
+              </>
+            )}
+          </Combobox.Option>
 
-            {filteredStores.map((store) => (
+          {filteredStores.length === 0 && query !== "" ? (
+            <div className="relative cursor-default select-none py-2 pl-3 pr-9 text-gray-700 dark:text-gray-300">
+              검색 결과가 없습니다.
+            </div>
+          ) : (
+            filteredStores.map((store) => (
               <Combobox.Option
                 key={store.id}
                 value={store}
@@ -101,9 +105,9 @@ const StoreSearchableSelect: React.FC<StoreSearchableSelectProps> = ({
                   </>
                 )}
               </Combobox.Option>
-            ))}
-          </Combobox.Options>
-        )}
+            ))
+          )}
+        </Combobox.Options>
       </div>
     </Combobox>
   );
