@@ -290,7 +290,7 @@ const ModelModal: React.FC<ModelModalProps> = ({ isOpen, onClose, phoneModelData
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">용량 선택</label>
-                    <div className="mt-2 grid grid-cols-3 gap-2 lg:grid-cols-6">
+                    <div className="mt-2 grid grid-cols-4 gap-2 lg:grid-cols-6">
                       {allStorages.map((storage) => (
                         <CustomCheckbox
                           key={storage.id}
