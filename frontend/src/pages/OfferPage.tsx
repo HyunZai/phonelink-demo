@@ -483,18 +483,6 @@ const OfferPage: React.FC = () => {
 
                       {/* 가격 + 토글 */}
                       <div className="flex flex-col items-center sm:items-end justify-center gap-3 w-full sm:w-auto flex-shrink-0">
-                        {/* 토글 스위치 */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            24개월로 나누기
-                          </span>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" />
-                            <div className="w-11 h-6 bg-gray-300 peer-checked:bg-primary-light dark:peer-checked:bg-primary-dark rounded-full transition-colors duration-200"></div>
-                            <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white border border-gray-300 dark:border-gray-500 rounded-full transition-transform duration-200 transform peer-checked:translate-x-5 shadow-sm"></div>
-                          </label>
-                        </div>
-
                         {/* 가격 */}
                         <div className="text-center sm:text-right">
                           <p
