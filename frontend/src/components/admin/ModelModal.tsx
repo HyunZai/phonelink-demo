@@ -1,6 +1,7 @@
-import { Dialog, Transition } from "@headlessui/react";
+import { Dialog, Listbox, Transition } from "@headlessui/react";
 import { format } from "date-fns";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { FiChevronDown } from "react-icons/fi";
 import { Controller, useFieldArray, useForm, type FieldErrors } from "react-hook-form";
 import type { PhoneDetailFormData, PhoneManufacturerDto, PhoneStorageDto } from "../../../../shared/phone.types";
 import { api } from "../../api/axios";
@@ -192,26 +193,81 @@ const ModelModal: React.FC<ModelModalProps> = ({ isOpen, onClose, phoneModelData
                 <form onSubmit={handleSubmit(onValid, onInvalid)} className="mt-4 space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label
-                        htmlFor="manufacturerId"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      <Listbox
+                        value={manufacturers.find((m) => m.id === watch("manufacturerId"))?.id || ""}
+                        onChange={(value) => {
+                          const event = {
+                            target: {
+                              name: "manufacturerId",
+                              value: value,
+                            },
+                          };
+                          register("manufacturerId").onChange(event);
+                        }}
                       >
-                        제조사
-                      </label>
-                      <select
-                        id="manufacturerId"
-                        {...register("manufacturerId", {
-                          required: "제조사를 선택해주세요.",
-                          valueAsNumber: true,
-                        })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light dark:bg-[#292929] dark:border-gray-500 dark:text-white"
-                      >
-                        {manufacturers.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name_ko}
-                          </option>
-                        ))}
-                      </select>
+                        <div className="relative mt-1">
+                          <label
+                            htmlFor="manufacturerId"
+                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                          >
+                            제조사
+                          </label>
+                          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-[#292929] py-2 pl-3 pr-10 text-left border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark focus:border-transparent sm:text-sm">
+                            <span className="block truncate text-gray-900 dark:text-white">
+                              {manufacturers.find((m) => m.id === watch("manufacturerId"))?.name_ko || "제조사 선택"}
+                            </span>
+                            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                              <FiChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                            </span>
+                          </Listbox.Button>
+                          <Transition
+                            as={Fragment}
+                            leave="transition ease-in duration-100"
+                            leaveFrom="opacity-100"
+                            leaveTo="opacity-0"
+                          >
+                            <Listbox.Options className="absolute z-10 mt-1 w-full overflow-auto rounded-md bg-white dark:bg-[#292929] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-gray-200 dark:border-gray-600 max-h-60">
+                              {manufacturers.map((m) => (
+                                <Listbox.Option
+                                  key={m.id}
+                                  className={({ active }) =>
+                                    `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                      active
+                                        ? "bg-primary-light/10 dark:bg-primary-dark/10 text-primary-light dark:text-primary-dark"
+                                        : "text-gray-900 dark:text-white"
+                                    }`
+                                  }
+                                  value={m.id}
+                                >
+                                  {({ selected }) => (
+                                    <>
+                                      <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
+                                        {m.name_ko}
+                                      </span>
+                                      {selected ? (
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary-light dark:text-primary-dark">
+                                          <svg
+                                            className="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            aria-hidden="true"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        </span>
+                                      ) : null}
+                                    </>
+                                  )}
+                                </Listbox.Option>
+                              ))}
+                            </Listbox.Options>
+                          </Transition>
+                        </div>
+                      </Listbox>
                       {errors.manufacturerId && (
                         <p className="mt-1 text-sm text-red-600">{errors.manufacturerId.message}</p>
                       )}

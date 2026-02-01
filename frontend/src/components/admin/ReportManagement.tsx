@@ -199,7 +199,7 @@ const ReportManagement: React.FC = () => {
         <div className="w-full sm:w-48">
           <Listbox value={statusFilter} onChange={setStatusFilter}>
             <div className="relative">
-              <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-[#292929] py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark focus:border-transparent sm:text-sm">
+              <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-[#292929] py-2 pl-3 pr-10 text-left border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark focus:border-transparent sm:text-sm">
                 <span className="block truncate text-gray-900 dark:text-white">
                   {statusFilterOptions.find((option) => option.value === statusFilter)?.label}
                 </span>
