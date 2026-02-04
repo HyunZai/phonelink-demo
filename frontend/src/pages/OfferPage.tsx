@@ -263,7 +263,7 @@ const OfferPage: React.FC = () => {
           <div className="flex flex-col gap-3 mt-6 px-2">
             {/* --- 검색 조건 제목 및 초기화 버튼 --- */}
             {hasConditions && (
-              <div className="flex items-baseline gap-3 mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-baseline gap-3 mb-2 pb-2 border-b border-gray-200 dark:border-background-dark">
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">검색 조건</h3>
                 <button
                   onClick={handleResetConditions}
@@ -283,11 +283,13 @@ const OfferPage: React.FC = () => {
                 {selectedRegions.map((item) => (
                   <span
                     key={item.code}
-                    className="flex items-center text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full"
+                    className="flex items-center text-sm bg-gray-100 dark:bg-[#363636] text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full"
                   >
                     {lastSelectedSido?.name} {item.name}
                     <button
-                      onClick={() => setSelectedRegions((prev) => prev.filter((item) => item.code !== item.code))}
+                      onClick={() =>
+                        setSelectedRegions((prev) => prev.filter((prevItem) => prevItem.code !== item.code))
+                      }
                       className="ml-2 text-gray-500 hover:text-red-500"
                     >
                       <FiX size={14} />

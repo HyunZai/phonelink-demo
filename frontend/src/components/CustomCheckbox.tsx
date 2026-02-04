@@ -17,7 +17,7 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({ label, checked, onChang
         ${
           checked
             ? "border-none bg-primary-light dark:bg-primary-dark text-foreground-dark dark:text-foreground-light"
-            : "border-none text-foreground-light dark:text-foreground-dark hover:bg-gray-100 dark:hover:bg-gray-600"
+            : "border-none text-foreground-light dark:text-foreground-dark hover:bg-gray-100 dark:hover:bg-[#575757]"
         }
       `}
     >

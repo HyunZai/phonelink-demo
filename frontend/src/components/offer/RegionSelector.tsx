@@ -100,7 +100,7 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
 
   return (
     <div className="flex flex-col md:flex-row gap-4">
-      <div className="w-full md:w-1/4 max-h-60 overflow-y-auto border border-gray-300 dark:border-gray-400 rounded-lg p-3 bg-white dark:bg-[#292929]">
+      <div className="w-full md:w-1/4 max-h-60 overflow-y-auto custom-scrollbar border border-gray-300 dark:border-gray-400 rounded-md p-3 bg-white dark:bg-[#292929]">
         <div className="grid grid-cols-3 md:grid-cols-2 gap-2">
           {sidoOptions?.map((sido) => (
             <label key={sido.name} className="flex justify-center items-center cursor-pointer">
@@ -114,7 +114,7 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
           ))}
         </div>
       </div>
-      <div className="w-full md:w-3/4 max-h-60 overflow-y-auto border border-gray-300 dark:border-gray-400 rounded-lg p-3 bg-white dark:bg-[#292929]">
+      <div className="w-full md:w-3/4 max-h-60 overflow-y-auto custom-scrollbar border border-gray-300 dark:border-gray-400 rounded-md p-3 bg-white dark:bg-[#292929]">
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
           {!lastSelectedSido ? (
             <div className="text-gray-400 text-xs">시/도를 먼저 선택하세요.</div>

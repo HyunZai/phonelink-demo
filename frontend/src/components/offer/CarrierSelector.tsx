@@ -70,7 +70,7 @@ const CarrierSelector: React.FC<CarrierSelectorProps> = ({ selectedCarriers, onC
     ${
       isSelected
         ? "border-green-600 bg-green-50 dark:border-gray-400 dark:bg-primary-dark/20 shadow-md"
-        : "border-gray-300 bg-white dark:bg-background-dark hover:bg-gray-100 dark:hover:bg-gray-600/40"
+        : "border-gray-300 bg-white dark:bg-background-dark hover:bg-gray-100 dark:hover:bg-[#575757]/40"
     }
   `}
             >
