@@ -219,8 +219,11 @@ router.post("/search", async (req, res) => {
           sidoCodeClauses.push(`r.code LIKE :parentCode${index}`);
           regionParams[`parentCode${index}`] = `${sidoCode}%`;
         } else {
-          // 일반 지역 코드는 IN 조건에 추가
-          specificCodes.push(region.code);
+          // 일반 지역 코드도 상위 코드로 간주하여 접두사 검색 적용
+          // 예: '4113000000'(성남시) -> '4113' 추출 -> '4113%'(성남시 및 구/동 포함)
+          const prefix = region.code.replace(/0+$/, "");
+          sidoCodeClauses.push(`r.code LIKE :specificCode${index}`);
+          regionParams[`specificCode${index}`] = `${prefix}%`;
         }
       });
 
@@ -324,7 +327,7 @@ router.post("/search", async (req, res) => {
       .innerJoin("o.carrier", "c")
       .where("1=1")
       .andWhere("r.is_active = :isActive", { isActive: true }) // 폐지되지 않은, 현존하는 지역만 조회
-      .andWhere("(CHAR_LENGTH(r.name) - CHAR_LENGTH(REPLACE(r.name, ' ', ''))) = 1") // '시/군/구' 코드만 불러오는 조건
+      //.andWhere("(CHAR_LENGTH(r.name) - CHAR_LENGTH(REPLACE(r.name, ' ', ''))) = 1") // '시/군/구' 코드만 불러오는 조건
       .andWhere("s.status = :status", { status: "OPEN" }) // 폐업하지 않은 매장만 조회
       .andWhere("o.price IS NOT NULL") // 가격이 있는 경우만 조회
       .andWhere("s.approval_status = :approvalStatus", {
