@@ -73,6 +73,17 @@ const StoreStaffForm: React.FC<StoreStaffFormProps> = ({ storeId }) => {
     }
     // 재직 중 상태
     else if (systemStatus === "ACTIVE" && storeStatus === "ACTIVE") {
+      // 활성 상태인 직원 수 계산
+      const activeStaffCount = staffMembers.filter(
+        (member) => member.storeStatus === "ACTIVE" && member.systemStatus === "ACTIVE",
+      ).length;
+
+      // 직원이 1명 이하인 경우 퇴사 처리 방지
+      if (activeStaffCount <= 1) {
+        toast.error("유일한 매장 직원 계정입니다. 퇴사 처리할 수 없습니다.");
+        return;
+      }
+
       Swal.fire({
         title: "퇴사 처리하시겠습니까?",
         text: "퇴사 시, 해당 사용자에게 매장 관리 권한이 해제됩니다.",
@@ -225,7 +236,7 @@ const StoreStaffForm: React.FC<StoreStaffFormProps> = ({ storeId }) => {
                             />
                           ) : (
                             <div className="w-16 h-16 lg:w-12 lg:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
-                              <FaUserAlt className="w-8 h-8 lg:w-6 h-6 text-gray-400 dark:text-gray-500" />
+                              <FaUserAlt className="w-8 h-8 lg:w-6 lg:h-6 text-gray-400 dark:text-gray-500" />
                             </div>
                           )}
                         </div>
