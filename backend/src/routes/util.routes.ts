@@ -13,6 +13,7 @@ router.get("/community-categories", async (req, res) => {
     const categories = await categoriesRepository
       .createQueryBuilder("c")
       .where("c.description LIKE :pattern", { pattern: "%게시판" })
+      .andWhere("c.description != :exclude", { exclude: "정보게시판" })
       .select(["c.id", "c.name", "c.description"])
       .getMany();
 
