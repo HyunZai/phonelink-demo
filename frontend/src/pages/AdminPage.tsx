@@ -133,8 +133,8 @@ const AdminPage: React.FC = () => {
               </div>
 
               {pendingStores.length === 0 ? (
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
-                  <p className="text-gray-500 dark:text-gray-400">승인 대기 중인 매장이 없습니다.</p>
+                <div className="bg-gray-50 dark:bg-background-dark rounded-lg p-8 text-center">
+                  <p className="text-gray-500 dark:text-gray-200">승인 대기 중인 매장이 없습니다.</p>
                 </div>
               ) : (
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-[#454545] overflow-hidden">
