@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Combobox } from "@headlessui/react";
+import { Listbox } from "@headlessui/react";
 import { FaTrashAlt, FaChevronDown } from "react-icons/fa";
 import { FiAlertTriangle } from "react-icons/fi";
 import type { AddonFormData, CarrierDto } from "../../../../shared/types";
@@ -241,36 +241,42 @@ const StoreAddonForm: React.FC<{ storeId: number; isEditable?: boolean }> = ({ s
                     통신사
                   </label>
                   {isEditable ? (
-                    <Combobox
+                    <Listbox
                       value={carriers.find((carrier) => carrier.id === addon.carrierId) || null}
                       onChange={(carrier) => handleAddonChange(index, "carrierId", carrier?.id || null)}
                     >
                       <div className="relative">
-                        <Combobox.Input
-                          className="w-full px-2 py-2 text-sm sm:text-base border border-gray-300 rounded-md dark:bg-background-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-light"
-                          displayValue={(carrier: CarrierDto | null) => carrier?.name || "통신사 선택"}
-                          readOnly
-                        />
-                        <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3">
-                          <FaChevronDown className="h-4 w-4 text-gray-400" aria-hidden="true" />
-                        </Combobox.Button>
-                        <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Listbox.Button className="relative w-full px-2 py-2 text-left text-sm sm:text-base border border-gray-300 rounded-md dark:bg-background-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-light cursor-default">
+                          <span className="block truncate">
+                            {carriers.find((carrier) => carrier.id === addon.carrierId)?.name || "통신사 선택"}
+                          </span>
+                          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <FaChevronDown className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                          </span>
+                        </Listbox.Button>
+                        <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-[#464646] py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                           {carriers.map((carrier) => (
-                            <Combobox.Option
+                            <Listbox.Option
                               key={carrier.id}
                               value={carrier}
                               className={({ active }) =>
                                 `relative cursor-default select-none py-2 pl-3 pr-9 ${
-                                  active ? "bg-primary-light text-white" : "text-gray-900 dark:text-gray-100"
+                                  active
+                                    ? "bg-primary-light dark:bg-primary-dark text-white"
+                                    : "text-gray-900 dark:text-gray-100"
                                 }`
                               }
                             >
-                              {carrier.name}
-                            </Combobox.Option>
+                              {({ selected }) => (
+                                <span className={`block truncate ${selected ? "font-bold" : "font-normal"}`}>
+                                  {carrier.name}
+                                </span>
+                              )}
+                            </Listbox.Option>
                           ))}
-                        </Combobox.Options>
+                        </Listbox.Options>
                       </div>
-                    </Combobox>
+                    </Listbox>
                   ) : (
                     <div className="w-full px-2 py-2 text-sm sm:text-base border border-gray-300 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
                       {carriers.find((carrier) => carrier.id === addon.carrierId)?.name || "통신사 선택"}
