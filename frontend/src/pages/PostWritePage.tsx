@@ -110,6 +110,14 @@ const PostWritePage: React.FC = () => {
     loadExistingPost();
   }, [postId, editor, user, category, navigate]);
 
+  // info (tips) 게시판은 관리자만 작성 가능하도록 접근 제어
+  useEffect(() => {
+    if (category === "tips" && user?.role !== "ADMIN" && !isLoading) {
+      toast.error("정보 게시판은 관리자만 작성할 수 있습니다.");
+      navigate("/tips", { replace: true });
+    }
+  }, [category, user, isLoading, navigate]);
+
   // 페이지 벗어날 때 확인 메시지
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

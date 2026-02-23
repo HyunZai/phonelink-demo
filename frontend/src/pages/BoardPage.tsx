@@ -4,10 +4,12 @@ import { FaEye, FaHeart, FaComment, FaPen, FaFire, FaTrophy, FaImage } from "rea
 import type { PostListDto } from "../../../shared/types";
 import { api } from "../api/axios";
 import Pagination from "../components/Pagination";
+import { useAuthStore } from "../store/authStore";
 
 const TipsPage: React.FC = () => {
   const navigate = useNavigate();
   const { category } = useParams<{ category: string }>();
+  const { user } = useAuthStore();
   const [posts, setPosts] = useState<PostListDto[]>([]);
   const [popularPosts, setPopularPosts] = useState<PostListDto[]>([]);
   const [isWideScreen, setIsWideScreen] = useState(false);
@@ -148,16 +150,22 @@ const TipsPage: React.FC = () => {
           게시판
         </h1>
 
-        {/* 글쓰기 버튼 */}
-        <button
-          onClick={handleWriteClick}
-          className="group relative bg-primary-light dark:bg-primary-dark text-white dark:text-background-dark px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 font-medium"
-        >
-          <div className="flex items-center gap-2 relative z-10">
-            <FaPen className="w-4 h-4 group-hover:rotate-12 transition-transform duration-200" />
-            <span>글쓰기</span>
-          </div>
-        </button>
+        {/* 
+        글쓰기 버튼 
+        tips(정보) 게시판은 ADMIN만 글쓰기 가능, 
+        그 외 게시판은 누구나 글쓰기 가능 
+      */}
+        {!(category === "tips" && user?.role !== "ADMIN") && (
+          <button
+            onClick={handleWriteClick}
+            className="group relative bg-primary-light dark:bg-primary-dark text-white dark:text-background-dark px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 font-medium"
+          >
+            <div className="flex items-center gap-2 relative z-10">
+              <FaPen className="w-4 h-4 group-hover:rotate-12 transition-transform duration-200" />
+              <span>글쓰기</span>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* 인기 게시글 섹션 */}
