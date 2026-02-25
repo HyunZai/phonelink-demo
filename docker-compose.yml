@@ -1,0 +1,77 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: phonelink-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_NAME}
+    ports:
+      - "${DATABASE_PORT}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - phonelink-network
+    platform: linux/arm64 # Oracle ARM 서버
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: phonelink-backend
+    restart: always
+    ports:
+      - "${PORT}:4000"
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=3306
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SIGNUP_SECRET=${JWT_SIGNUP_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - PHONE_LINK_CLIENT_URL=${PHONE_LINK_CLIENT_URL}
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+      - KAKAO_ADMIN_KEY=${KAKAO_ADMIN_KEY}
+      - DATA_GO_KR_REGION_API_KEY=${DATA_GO_KR_REGION_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=demo
+    depends_on:
+      - db
+    networks:
+      - phonelink-network
+    platform: linux/arm64
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      args:
+        VITE_API_URL: ${PHONE_LINK_CLIENT_URL}/api # 실제 도메인 또는 백엔드 라우팅에 맞춰 Nginx 설정에서 처리
+        VITE_NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+        VITE_KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+        VITE_NAVER_REDIRECT_URI: ${PHONE_LINK_CLIENT_URL}/auth/callback/naver
+        VITE_KAKAO_REDIRECT_URI: ${PHONE_LINK_CLIENT_URL}/auth/callback/kakao
+    container_name: phonelink-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - phonelink-network
+    platform: linux/arm64
+
+volumes:
+  db_data:
+
+networks:
+  phonelink-network:
+    driver: bridge

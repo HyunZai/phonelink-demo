@@ -339,7 +339,7 @@ router.post(
                 // 유니크한 키를 생성하여 Offer를 식별
                 const offerKey = `${carrier.carrierId}-${device.id}-${offerType.offerType}`;
                 const offerData: OfferDto = {
-                  storeId: parseInt(storeId),
+                  storeId: parseInt(storeId as string),
                   carrierId: carrier.carrierId,
                   deviceId: device.id,
                   offerType: offerType.offerType,
@@ -355,7 +355,7 @@ router.post(
 
       // DB에 저장된 기존 Offer 데이터를 조회
       const existingOffers = await offerRepo.findBy({
-        storeId: parseInt(storeId),
+        storeId: parseInt(storeId as string),
       });
       const existingOfferMap = new Map(
         existingOffers.map((o) => {
@@ -515,7 +515,7 @@ router.post(
       const { editedStore } = req.body;
 
       // storeId 유효성 검사
-      const storeIdNumber = parseInt(storeId);
+      const storeIdNumber = parseInt(storeId as string);
       if (isNaN(storeIdNumber)) {
         return res.status(400).json({
           success: false,
@@ -591,7 +591,7 @@ router.post("/:storeId/addon-save", isAuthenticated, hasRole([ROLES.SELLER, ROLE
 
     // 트랜잭션을 사용하여 데이터 무결성을 보장
     const result = await AppDataSource.transaction(async (transactionalEntityManager) => {
-      const storeIdNumber = parseInt(storeId);
+      const storeIdNumber = parseInt(storeId as string);
 
       // 기존 데이터 삭제
       await transactionalEntityManager.delete(Addon, {
@@ -637,7 +637,7 @@ router.get("/:storeId/req-plans", isAuthenticated, async (req, res) => {
     const { storeId } = req.params;
     const reqPlanRepo = AppDataSource.getRepository(ReqPlan);
 
-    const plans = await reqPlanRepo.findBy({ storeId: parseInt(storeId) });
+    const plans = await reqPlanRepo.findBy({ storeId: parseInt(storeId as string) });
 
     res.status(200).json({
       success: true,
@@ -654,7 +654,7 @@ router.get("/:storeId/req-plans", isAuthenticated, async (req, res) => {
 
 router.post("/:storeId/req-plans", isAuthenticated, hasRole(["SELLER"]), async (req, res) => {
   try {
-    const storeIdString: string = req.params.storeId;
+    const storeIdString: string = req.params.storeId as string;
     const plans: ReqPlanDto[] = req.body;
 
     const result = await AppDataSource.transaction(async (transactionEntityManager) => {
@@ -799,7 +799,7 @@ router.get("/:storeId/staffs", isAuthenticated, hasRole([ROLES.SELLER, ROLES.ADM
       ])
       .from(User, "u")
       .innerJoin("sellers", "s", "u.id = s.user_id")
-      .where("s.store_id = :storeId", { storeId: parseInt(storeId) })
+      .where("s.store_id = :storeId", { storeId: parseInt(storeId as string) })
       .getRawMany<StoreStaffData>();
 
     res.status(200).json({
@@ -909,7 +909,7 @@ router.get("/:storeId/available-models", isAuthenticated, hasRole([ROLES.SELLER,
           pm.name_ko;
     `;
 
-    const result = await AppDataSource.query(query, [parseInt(storeId)]);
+    const result = await AppDataSource.query(query, [parseInt(storeId as string)]);
 
     // pm.id와 pm.manufacturer_id를 number로 파싱
     const parsedResult = result.map((item: { id: string; name_ko: string; manufacturer_id: string }) => ({
@@ -969,7 +969,7 @@ router.get("/:storeId/available-storages", isAuthenticated, hasRole([ROLES.SELLE
           END ASC;
     `;
 
-    const result = await AppDataSource.query(query, [parseInt(modelId as string), parseInt(storeId)]);
+    const result = await AppDataSource.query(query, [parseInt(modelId as string), parseInt(storeId as string)]);
 
     // ps.id를 number로 파싱
     const parsedResult = result.map((item: { id: string; storage: string }) => ({

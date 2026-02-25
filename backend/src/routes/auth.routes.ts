@@ -274,7 +274,7 @@ router.get("/profile", isAuthenticated, async (req: AuthenticatedRequest, res: R
 });
 
 router.post("/callback/:provider", async (req, res) => {
-  const { provider } = req.params;
+  const provider = req.params.provider as string;
   const { code } = req.body;
 
   if (!code) {
@@ -649,7 +649,7 @@ router.post("/withdrawal", async (req, res) => {
 });
 
 router.post("/unlink/:provider", isAuthenticated, async (req: AuthenticatedRequest, res) => {
-  const { provider } = req.params;
+  const provider = req.params.provider as string;
   try {
     const userId = req.user?.id;
 
@@ -697,7 +697,7 @@ router.post("/unlink/:provider", isAuthenticated, async (req: AuthenticatedReque
 
 // 마이페이지에서 소셜로그인 계정 연동
 router.post("/link/:provider", isAuthenticated, async (req: AuthenticatedRequest, res) => {
-  const { provider } = req.params;
+  const provider = req.params.provider as string;
   try {
     const { code } = req.body;
     const userId = req.user?.id;

@@ -1131,7 +1131,7 @@ router.get("/reports/:id", async (req, res) => {
 router.post("/reports/:id/process", async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
-    const reportId = parseInt(id, 10);
+    const reportId = parseInt(id as string, 10);
     const { status, actionTaken } = req.body;
 
     if (isNaN(reportId) || reportId <= 0) {

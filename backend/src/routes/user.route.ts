@@ -683,7 +683,7 @@ router.get("/check-unlink/:provider", isAuthenticated, async (req: Authenticated
 
     // 소셜 계정 존재 여부 확인
     const socialAccounts = await AppDataSource.getRepository(SocialAccount).find({
-      where: { userId: userId, provider: provider },
+      where: { userId: userId, provider: provider as string },
     });
 
     if (socialAccounts.length === 0) {

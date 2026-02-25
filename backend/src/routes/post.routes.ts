@@ -428,7 +428,7 @@ router.get("/detail/:id", optionalAuth, async (req: AuthenticatedRequest, res) =
 
   try {
     const { id } = req.params;
-    const postId = parseInt(id);
+    const postId = parseInt(id as string);
     const userId = req.user?.id;
 
     if (isNaN(postId) || postId <= 0) {
@@ -646,7 +646,7 @@ router.post("/delete/:id", isAuthenticated, async (req: AuthenticatedRequest, re
   try {
     const { id } = req.params;
     const userId = req.user?.id;
-    const postId = parseInt(id);
+    const postId = parseInt(id as string);
 
     if (isNaN(postId) || postId <= 0) {
       return res.status(400).json({ success: false, message: "유효하지 않은 게시글 ID입니다." });
@@ -675,7 +675,7 @@ router.post("/update/:id", isAuthenticated, async (req: AuthenticatedRequest, re
   try {
     const { id } = req.params;
     const userId = req.user?.id;
-    const postId = parseInt(id);
+    const postId = parseInt(id as string);
     if (isNaN(postId) || postId <= 0) {
       return res.status(400).json({ success: false, message: "유효하지 않은 게시글 ID입니다." });
     }
