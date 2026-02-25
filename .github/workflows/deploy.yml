@@ -1,0 +1,34 @@
+name: Deploy PhoneLink to Oracle Cloud
+
+# 1. 언제 작동할거냐
+on:
+  push:
+    branches:
+      - demo-hyunzai #해당 브랜치가 push가 되면 작동
+
+# 2. 작업 목록
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # 서버 OS 환경
+
+    steps:
+      # 3. SSH 원격 접속
+      - name: SSH to Oracle Server and Deploy
+        uses: appleboy/ssh-action@v1.0.3 # SSH 접속 도구
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ubuntu # 오라클 서버 기본 계정명
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+
+          # 4. 실행 명령어들
+          script: |
+            cd phone-link
+
+            git pull origin demo-hyunzai
+
+            # 환경변수 파일 생성
+            echo "${{ secrets.FRONTEND_ENV }}" > frontend/.env
+            echo "${{ secrets.BACKEND_ENV }}" > backend/.env
+
+            # 도커 다시 굽고 백그라운드 실행
+            docker compose up -d --build
