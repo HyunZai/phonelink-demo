@@ -53,6 +53,12 @@ services:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
+      args:
+        VITE_API_URL: ${PHONE_LINK_CLIENT_URL}/api
+        VITE_NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+        VITE_KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+        VITE_NAVER_REDIRECT_URI: ${PHONE_LINK_CLIENT_URL}/auth/callback/naver
+        VITE_KAKAO_REDIRECT_URI: ${PHONE_LINK_CLIENT_URL}/auth/callback/kakao
     container_name: phonelink-frontend
     restart: always
     ports:
