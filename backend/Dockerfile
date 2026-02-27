@@ -1,32 +1,16 @@
-# Stage 1: Build
-FROM node:24-alpine AS build
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-COPY backend/package.json backend/package-lock.json ./backend/
-
-RUN npm install
-RUN npm install --prefix backend
-
-COPY . .
-
-RUN npm run build --prefix backend
-
-# --- Stage 2: Production ---
 FROM node:24-alpine
-
 WORKDIR /app
 
-LABEL org.opencontainers.image.source=https://github.com/phone-link-org/phone-link
+# 패키지 파일 먼저 복사해서 캐시 효율 높이기
+COPY backend/package*.json ./
+RUN npm install
 
-COPY --from=build /app/backend/package.json /app/package.json
-COPY --from=build /app/backend/package-lock.json /app/package-lock.json
-RUN npm install --omit=dev
+# 나머지 소스코드 복사
+COPY backend/ ./
 
-COPY --from=build /app/backend/dist ./dist
-COPY --from=build /app/backend/uploads ./uploads/
+# 빌드
+RUN npm run build
 
+# 실행 포트 (예: 4000)
 EXPOSE 4000
-
-CMD ["node", "dist/backend/src/server.js"]
+CMD ["npm", "start"]

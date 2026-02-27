@@ -1,35 +1,16 @@
-# Stage 1: Build the React application
-FROM node:24-alpine AS build
+FROM node:24-alpine
 WORKDIR /app
 
-COPY frontend/package.json frontend/package-lock.json ./
+# 패키지 파일 먼저 복사해서 캐시 효율 높이기
+COPY frontend/package*.json ./
 RUN npm install
 
-COPY . .
+# 나머지 소스코드 복사
+COPY frontend/ ./
 
-ARG VITE_API_URL
-ARG VITE_NAVER_CLIENT_ID
-ARG VITE_NAVER_REDIRECT_URI
-ARG VITE_KAKAO_CLIENT_ID
-ARG VITE_KAKAO_REDIRECT_URI
+# 프론트엔드 환경변수(.env)가 복사된 후 빌드 진행
+RUN npm run build
 
-ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_NAVER_CLIENT_ID=$VITE_NAVER_CLIENT_ID
-ENV VITE_NAVER_REDIRECT_URI=$VITE_NAVER_REDIRECT_URI
-ENV VITE_KAKAO_CLIENT_ID=$VITE_KAKAO_CLIENT_ID
-ENV VITE_KAKAO_REDIRECT_URI=$VITE_KAKAO_REDIRECT_URI
-
-RUN npm run build --prefix frontend
-
-# Stage 2: Serve the application with Nginx
-FROM nginx:alpine
-
-# Nginx 설정 파일 복사
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
-
-# Stage 1에서 빌드된 결과물을 Nginx의 서빙 디렉토리로 복사
-COPY --from=build /app/frontend/dist /usr/share/nginx/html
-
+# 실행 포트 (예: 80)
 EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "80"]
