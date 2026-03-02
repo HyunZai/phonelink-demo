@@ -33,6 +33,12 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_NAVER_CLIENT_ID=${VITE_NAVER_CLIENT_ID}
+        - VITE_KAKAO_CLIENT_ID=${VITE_KAKAO_CLIENT_ID}
+        - VITE_NAVER_REDIRECT_URI=${VITE_NAVER_REDIRECT_URI}
+        - VITE_KAKAO_REDIRECT_URI=${VITE_KAKAO_REDIRECT_URI}
     container_name: phonelink-frontend
     restart: unless-stopped
     ports:
