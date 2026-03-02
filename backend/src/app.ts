@@ -38,8 +38,8 @@ app.use(requestLoggingMiddleware);
 app.use(
   cors({
     origin:
-      process.env.ENVIRONMENT === "prod" ? "http://phonelink-frontend-service.phonelink:80" : "http://localhost:5173",
-    methods: ["GET", "POST"],
+      process.env.ENVIRONMENT === "prod" ? process.env.CORS_ORIGIN : process.env.CORS_ORIGIN || "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   }),
 );
