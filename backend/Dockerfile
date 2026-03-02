@@ -21,4 +21,4 @@ RUN npm run build
 EXPOSE 4000
 
 # 앱 실행
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/app/src/server.js"]
