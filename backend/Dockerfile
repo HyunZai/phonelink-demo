@@ -5,13 +5,14 @@ FROM node:23-alpine
 WORKDIR /app
 
 # 패키지 파일 먼저 복사해서 캐시 효율 높이기
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # 의존성 설치
 RUN npm ci
 
 # 소스코드 복사
-COPY . .
+COPY backend/ ./
+COPY shared/ ../shared/
 
 # 빌드
 RUN npm run build
