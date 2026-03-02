@@ -25,7 +25,8 @@ services:
     ports:
       - "4000:4000"
     depends_on:
-      - mysql # mysql 먼저 실행 후 백엔드 실행
+      mysql:
+        condition: service_healthy
     networks:
       - phonelink-network
 
