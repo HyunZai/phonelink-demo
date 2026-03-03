@@ -34,11 +34,8 @@ router.post("/delete", isAuthenticated, (req, res) => {
   }
 
   try {
-    const filePath = path.join(
-      __dirname,
-      process.env.ENVIRONMENT === "prod" ? "../../../../uploads/images" : "../../uploads/images",
-      imageUrl,
-    );
+    // imageUrl은 '/uploads/...' 형태로 들어오므로 process.cwd()와 결합하면 올바른 절대 경로가 됩니다.
+    const filePath = path.join(process.cwd(), imageUrl);
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);

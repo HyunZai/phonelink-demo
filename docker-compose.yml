@@ -29,6 +29,8 @@ services:
       - ./backend/.env
     ports:
       - "4000:4000"
+    volumes:
+      - ./backend/uploads:/app/uploads
     depends_on:
       mysql:
         condition: service_healthy

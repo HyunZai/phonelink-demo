@@ -9,9 +9,8 @@ dotenv.config();
 const ALLOWED_TYPES = ["store", "device", "profile", "post", "carrier"] as const;
 type UploadType = (typeof ALLOWED_TYPES)[number];
 
-// ENVIRONMENT에 따른 업로드 경로 분기처리
-const env = process.env.ENVIRONMENT;
-const baseUploadDir = path.join(__dirname, env === "prod" ? "../../../../uploads/images" : "../../uploads/images");
+// ENVIRONMENT에 상관없이 process.cwd() 기준으로 업로드 경로 일원화
+const baseUploadDir = path.join(process.cwd(), "uploads/images");
 
 // Multer 스토리지 설정
 const storage = multer.diskStorage({
