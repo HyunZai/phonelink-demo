@@ -4,7 +4,7 @@ name: Deploy PhoneLink demo to Oracle Cloud
 on:
   push:
     branches:
-      - demo-hyunzai #해당 브랜치가 push가 되면 작동
+      - main #해당 브랜치가 push가 되면 작동
 
 # 2. 작업 목록
 jobs:
@@ -23,7 +23,7 @@ jobs:
           # 4. 실행 명령어들
           script: |
             cd ~/apps/phonelink-demo
-            git pull origin demo-hyunzai
+            git pull origin main
             docker compose down --remove-orphans
             docker rm -f phonelink-backend phonelink-frontend phonelink-mysql 2>/dev/null || true
             docker compose up -d --build
