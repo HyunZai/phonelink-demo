@@ -215,22 +215,6 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md p-6 sm:p-8 space-y-6 rounded-lg shadow-md bg-white dark:bg-[#292929]">
         <h1 className="text-3xl font-bold text-center text-primary-light dark:text-primary-dark">PhoneLink</h1>
 
-        {/* 데모용 테스트 계정 안내 */}
-        <div className="p-4 text-sm rounded-lg bg-gray-50 dark:bg-[#343434] border border-gray-200 dark:border-gray-700">
-          <p className="font-bold text-gray-700 dark:text-gray-200 mb-2">💡 데모용 테스트 계정</p>
-          <div className="space-y-1 text-gray-600 dark:text-gray-300">
-            <p>
-              <span className="font-medium">판매자:</span> seller01@phonelink.com
-            </p>
-            <p>
-              <span className="font-medium">관리자:</span> admin@phonelink.com
-            </p>
-            <p>
-              <span className="font-medium">비밀번호:</span> asdqwe123@
-            </p>
-          </div>
-        </div>
-
         <form onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
@@ -316,6 +300,33 @@ const LoginPage: React.FC = () => {
               <img src={provider.logo} alt={provider.alt} className="w-8 h-8" />
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* 우측 하단 고정 데모 계정 안내 팝업 */}
+      <div className="fixed bottom-6 right-6 p-5 w-72 text-sm rounded-xl shadow-2xl bg-white dark:bg-[#292929] border border-gray-200 dark:border-gray-700 z-50">
+        <div className="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-700 pb-3">
+          <p className="font-bold text-gray-800 dark:text-gray-100 text-base">💡 데모 테스트 계정</p>
+        </div>
+        <div className="space-y-3 text-gray-600 dark:text-gray-300">
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">판매자 계정</span>
+            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-gray-100 dark:border-gray-600">
+              seller01@phonelink.com
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">관리자 계정</span>
+            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-gray-100 dark:border-gray-600">
+              admin@phonelink.com
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">공용 패스워드</span>
+            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-gray-100 dark:border-gray-600">
+              asdqwe123@
+            </span>
+          </div>
         </div>
       </div>
     </div>
