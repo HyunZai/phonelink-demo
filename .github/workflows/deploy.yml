@@ -1,18 +1,18 @@
 name: Deploy PhoneLink demo to Oracle Cloud
 
-# 1. 언제 작동할거냐
+# 언제 작동할거냐
 on:
   push:
     branches:
       - main #해당 브랜치가 push가 되면 작동
 
-# 2. 작업 목록
+# 작업 목록
 jobs:
   deploy:
     runs-on: ubuntu-latest # 서버 OS 환경
 
     steps:
-      # 3. SSH 원격 접속
+      # SSH 원격 접속
       - name: SSH to Oracle Server and Deploy
         uses: appleboy/ssh-action@v1.0.3 # SSH 접속 도구
         with:
@@ -20,7 +20,7 @@ jobs:
           username: ubuntu # 오라클 서버 기본 계정명
           key: ${{ secrets.ORACLE_SSH_KEY }}
 
-          # 4. 실행 명령어들
+          # 실행 명령어들
           script: |
             cd ~/apps/phonelink-demo
             git pull origin main
