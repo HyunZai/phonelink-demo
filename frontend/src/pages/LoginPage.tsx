@@ -214,6 +214,23 @@ const LoginPage: React.FC = () => {
     <div className="flex items-center justify-center min-h-[90vh] bg-background-light dark:bg-background-dark py-12 px-4">
       <div className="w-full max-w-md p-6 sm:p-8 space-y-6 rounded-lg shadow-md bg-white dark:bg-[#292929]">
         <h1 className="text-3xl font-bold text-center text-primary-light dark:text-primary-dark">PhoneLink</h1>
+
+        {/* 데모용 테스트 계정 안내 */}
+        <div className="p-4 text-sm rounded-lg bg-gray-50 dark:bg-[#343434] border border-gray-200 dark:border-gray-700">
+          <p className="font-bold text-gray-700 dark:text-gray-200 mb-2">💡 데모용 테스트 계정</p>
+          <div className="space-y-1 text-gray-600 dark:text-gray-300">
+            <p>
+              <span className="font-medium">판매자:</span> seller01@phonelink.com
+            </p>
+            <p>
+              <span className="font-medium">관리자:</span> admin@phonelink.com
+            </p>
+            <p>
+              <span className="font-medium">비밀번호:</span> asdqwe123@
+            </p>
+          </div>
+        </div>
+
         <form onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
