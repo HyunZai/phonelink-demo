@@ -304,26 +304,26 @@ const LoginPage: React.FC = () => {
       </div>
 
       {/* 우측 하단 고정 데모 계정 안내 팝업 */}
-      <div className="fixed bottom-6 right-6 p-5 w-72 text-sm rounded-xl shadow-2xl bg-white dark:bg-[#292929] border border-gray-200 dark:border-gray-700 z-50">
-        <div className="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-700 pb-3">
+      <div className="fixed bottom-6 right-6 p-5 w-72 text-sm rounded-xl shadow-2xl bg-white dark:bg-[#292929] border border-[#212121] dark:border-[#212121] z-50">
+        <div className="flex items-center justify-between mb-3 border-b border-[#212121] dark:border-[#212121] pb-3">
           <p className="font-bold text-gray-800 dark:text-gray-100 text-base">💡 데모 테스트 계정</p>
         </div>
         <div className="space-y-3 text-gray-600 dark:text-gray-300">
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">판매자 계정</span>
-            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-gray-100 dark:border-gray-600">
+            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-[#212121] dark:border-[#212121]">
               seller01@phonelink.com
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">관리자 계정</span>
-            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-gray-100 dark:border-gray-600">
+            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-[#212121] dark:border-[#212121]">
               admin@phonelink.com
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">공용 패스워드</span>
-            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-gray-100 dark:border-gray-600">
+            <span className="font-mono text-[13px] bg-gray-50 dark:bg-[#3d3d3d] px-2.5 py-1.5 rounded-md select-all border border-[#212121] dark:border-[#212121]">
               asdqwe123@
             </span>
           </div>
