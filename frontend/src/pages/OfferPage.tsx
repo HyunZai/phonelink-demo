@@ -97,26 +97,11 @@ const OfferPage: React.FC = () => {
   // ---
 
   // 정렬 순서 변경 시, 새로운 검색 실행
-  const isInitialMount = useRef(true);
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
     fetchOfferDatas(true);
   }, [sortOrder]);
 
   const handleSearch = () => {
-    if (
-      selectedRegions.length === 0 &&
-      selectedModels.length === 0 &&
-      selectedCarriers.length === 0 &&
-      selectedOfferTypes.length === 0
-    ) {
-      toast.error("검색할 조건이 없습니다.");
-      return; // 검색 조건이 없으면 fetch하지 않고 종료
-    }
-
     pageRef.current = 1; // 페이지 1로 초기화
     setOfferDatas([]); // 기존 데이터 초기화
     fetchOfferDatas(true); // 새 검색 시작

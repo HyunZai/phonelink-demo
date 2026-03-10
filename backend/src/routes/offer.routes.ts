@@ -352,6 +352,9 @@ router.post("/search", async (req, res) => {
       qb.orderBy("o.price", "ASC");
     } else if (sortOrder === SORT_ORDER.PRICE_DESC) {
       qb.orderBy("o.price", "DESC");
+    } else {
+      // 기본 정렬: 최신 업데이트/등록 순
+      qb.orderBy("GREATEST(o.created_at, COALESCE(o.updated_at, o.created_at))", "DESC");
     }
 
     // 페이지네이션을 위한 총 개수 카운트 (주석처리됨, 필요시 활성화)
