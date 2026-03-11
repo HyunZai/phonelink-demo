@@ -153,7 +153,7 @@ const MyPage: React.FC = () => {
                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                   />
                 ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 dark:bg-[#474747] flex items-center justify-center">
                     <FaUserAlt className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 dark:text-gray-500" />
                   </div>
                 )}
@@ -190,7 +190,7 @@ const MyPage: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     {/* 아이콘 */}
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-opacity-80 transition-all duration-200">
+                      <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-[#474747] flex items-center justify-center group-hover:bg-opacity-80 transition-all duration-200">
                         <item.icon
                           className={`w-6 h-6 text-gray-600 dark:text-gray-400 ${item.hoverColor} transition-colors duration-200`}
                         />
