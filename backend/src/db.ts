@@ -33,10 +33,10 @@ dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: "mysql",
-  host: process.env.DATABASE_HOST,
+  host: process.env.ENVIRONMENT === "dev" ? "localhost" : process.env.DATABASE_HOST,
   port: process.env.DATABASE_PORT ? parseInt(process.env.DATABASE_PORT, 10) : undefined,
-  username: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
+  username: process.env.ENVIRONMENT === "dev" ? process.env.LOCAL_DATABASE_USER : process.env.DATABASE_USER,
+  password: process.env.ENVIRONMENT === "dev" ? process.env.LOCAL_DATABASE_PASSWORD : process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
   entities: [__dirname + "/typeorm/*.entity{.ts,.js}"],
   logger: new SqlLogger(),
